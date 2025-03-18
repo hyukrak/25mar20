@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.calman.domain.worklog.mapper.WorkLogMapper">
+
+  <!-- 결과 매핑 -->
+  <resultMap id="workLogResultMap" type="com.calman.domain.worklog.dto.WorkLogDTO">
+    <id property="id" column="wl_id"/>
+    <result property="workDatetime" column="wl_work_datetime"/>
+    <result property="carModel" column="wl_car_model"/>
+    <result property="materialCode" column="wl_material_code"/>
+    <result property="quantity" column="wl_quantity"/>
+    <result property="createdAt" column="wl_created_at"/>
+  </resultMap>
+
+  <!-- 공통 컬럼 목록 -->
+  <sql id="workLogColumns">
+    wl_id, wl_work_datetime, wl_car_model, wl_material_code, wl_quantity, wl_created_at
+  </sql>
+
+  <!-- 새 작업 로그 삽입 -->
+  <insert id="insertWorkLog" parameterType="com.calman.domain.worklog.dto.WorkLogDTO" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO work_logs (
+      wl_work_datetime, wl_car_model, wl_material_code, wl_quantity
+    ) VALUES (
+               #{workDatetime}, #{carModel}, #{materialCode}, #{quantity}
+             )
+  </insert>
+
+  <!-- ID로 작업 로그 조회 -->
+  <select id="selectWorkLogById" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    WHERE wl_id = #{id}
+  </select>
+
+  <!-- 페이징 및 필터링으로 작업 로그 목록 조회 -->
+  <select id="selectWorkLogs" parameterType="map" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    <where>
+      <if test="carModel != null and carModel != ''">
+        AND wl_car_model LIKE '%' || #{carModel} || '%'
+      </if>
+      <if test="materialCode != null and materialCode != ''">
+        AND wl_material_code LIKE '%' || #{materialCode} || '%'
+      </if>
+      <if test="startDate != null">
+        AND wl_work_datetime >= #{startDate}
+      </if>
+      <if test="endDate != null">
+        AND wl_work_datetime &lt;= #{endDate}
+      </if>
+    </where>
+    ORDER BY
+    <choose>
+      <when test="sortField != null and sortField != ''">
+        ${sortField} ${sortDirection}
+      </when>
+      <otherwise>
+        wl_created_at DESC
+      </otherwise>
+    </choose>
+    <if test="pageSize != null and pageNumber != null">
+      LIMIT #{pageSize} OFFSET (#{pageNumber} - 1) * #{pageSize}
+    </if>
+  </select>
+
+  <!-- 페이징을 위한 전체 작업 로그 수 조회 -->
+  <select id="countWorkLogs" parameterType="map" resultType="int">
+    SELECT COUNT(*)
+    FROM work_logs
+    <where>
+      <if test="carModel != null and carModel != ''">
+        AND wl_car_model LIKE '%' || #{carModel} || '%'
+      </if>
+      <if test="materialCode != null and materialCode != ''">
+        AND wl_material_code LIKE '%' || #{materialCode} || '%'
+      </if>
+      <if test="startDate != null">
+        AND wl_work_datetime >= #{startDate}
+      </if>
+      <if test="endDate != null">
+        AND wl_work_datetime &lt;= #{endDate}
+      </if>
+    </where>
+  </select>
+
+  <!-- 작업 로그 업데이트 -->
+  <update id="updateWorkLog" parameterType="com.calman.domain.worklog.dto.WorkLogDTO">
+    UPDATE work_logs
+    SET
+      wl_work_datetime = #{workDatetime},
+      wl_car_model = #{carModel},
+      wl_material_code = #{materialCode},
+      wl_quantity = #{quantity}
+    WHERE wl_id = #{id}
+  </update>
+
+  <!-- 작업 로그 삭제 -->
+  <delete id="deleteWorkLog">
+    DELETE FROM work_logs
+    WHERE wl_id = #{id}
+  </delete>
+
+  <!-- 날짜 범위로 작업 로그 조회 -->
+  <select id="selectWorkLogsByDateRange" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    WHERE wl_work_datetime &gt;= #{startDate}
+    AND wl_work_datetime &lt;= #{endDate}
+    ORDER BY wl_work_datetime ASC
+  </select>
+
+  <!-- 차량 모델로 작업 로그 조회 -->
+  <select id="selectWorkLogsByCarModel" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    WHERE wl_car_model LIKE '%' || #{carModel} || '%'
+    ORDER BY wl_created_at DESC
+  </select>
+
+  <!-- 자재 코드로 작업 로그 조회 -->
+  <select id="selectWorkLogsByMaterialCode" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    WHERE wl_material_code LIKE '%' || #{materialCode} || '%'
+    ORDER BY wl_created_at DESC
+  </select>
+</mapper>
