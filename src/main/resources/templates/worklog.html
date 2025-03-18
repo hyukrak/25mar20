@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>작업 로그 시스템</title>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+		/>
+		<style>
+			/* 전체 테마 색상 - 다크 퍼플 계열 */
+			:root {
+				--main-dark-purple: #312850;
+				--light-purple: #9d6ede;
+				--dark-purple: #5a3b8b;
+				--highlight-purple: #b794f6;
+			}
+
+			body {
+				font-family: 'Noto Sans KR', sans-serif;
+				padding: 20px;
+				background-color: #f8f9fa;
+			}
+
+			.page-header {
+				background-color: var(--main-dark-purple);
+				color: white;
+				padding: 1rem;
+				margin-bottom: 20px;
+				border-radius: 5px;
+				text-align: center;
+				font-size: 1.5rem;
+				font-weight: bold;
+			}
+
+			/* 태블릿에 최적화된 디자인 */
+			@media (min-width: 768px) and (max-width: 1199px) {
+				.container {
+					max-width: 95%;
+				}
+
+				.btn {
+					padding: 0.6rem 1.2rem;
+					font-size: 1.1rem;
+				}
+
+				table {
+					font-size: 1.1rem;
+				}
+
+				th,
+				td {
+					padding: 0.8rem !important;
+				}
+			}
+
+			.button-container {
+				display: flex;
+				justify-content: space-between;
+				margin-bottom: 20px;
+			}
+
+			.date-button-group {
+				margin-left: 5%;
+			}
+
+			.action-button-group {
+				margin-right: 5%;
+				display: flex;
+				gap: 10px;
+			}
+
+			.btn-primary {
+				background-color: var(--main-dark-purple);
+				border-color: var(--main-dark-purple);
+			}
+
+			.btn-primary:hover {
+				background-color: var(--dark-purple);
+				border-color: var(--dark-purple);
+			}
+
+			.btn-dark {
+				background-color: #000;
+				border-color: #000;
+			}
+
+			.table-header {
+				background-color: var(--main-dark-purple);
+				color: white;
+			}
+
+			.table-responsive {
+				margin-bottom: 30px;
+			}
+
+			/* 로딩 표시기 */
+			#loading {
+				display: none;
+				text-align: center;
+				padding: 20px;
+			}
+
+			/* 모달 스타일 */
+			.modal-header {
+				background-color: var(--main-dark-purple);
+				color: white;
+			}
+
+			.modal-content {
+				border-radius: 0;
+				border: 1px solid #000;
+			}
+
+			.modal-form-group {
+				margin-bottom: 1rem;
+			}
+
+			.modal-form-label {
+				display: block;
+				margin-bottom: 0.5rem;
+				font-weight: bold;
+			}
+
+			.modal-form-input {
+				width: 100%;
+				padding: 0.5rem;
+				border: 1px solid #000;
+			}
+
+			.modal-footer {
+				justify-content: center;
+				padding: 1rem;
+			}
+
+			/* 테이블 스타일 */
+			.table th {
+				background-color: var(--main-dark-purple);
+				color: white;
+				font-weight: normal;
+				border: none;
+				text-align: center;
+			}
+
+			.table td {
+				vertical-align: middle;
+				text-align: center;
+			}
+
+			.table tr:nth-child(even) {
+				background-color: #f2f2f2;
+			}
+
+			.table tr:nth-child(odd) {
+				background-color: #ffffff;
+			}
+
+			.table tr:hover {
+				background-color: #ddd;
+				cursor: pointer;
+			}
+
+			/* 체크박스 스타일 */
+			.form-check-input {
+				transform: scale(1.5);
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="page-header">작업내역</div>
+
+			<!-- 상단 버튼 컨테이너 -->
+			<div class="button-container">
+				<!-- 날짜 버튼 (작업시간 컬럼 위에 위치) -->
+				<div class="date-button-group">
+					<button type="button" class="btn btn-primary" id="btnDate">
+						<i class="bi bi-calendar"></i> 날짜
+					</button>
+				</div>
+
+				<!-- 작업 버튼들 (생성일 컬럼 위에 위치) -->
+				<div class="action-button-group">
+					<button type="button" class="btn btn-primary" id="btnUpload">
+						<i class="bi bi-upload"></i> 업로드
+					</button>
+					<button type="button" class="btn btn-primary" id="btnCreate">
+						<i class="bi bi-plus-circle"></i> 생성
+					</button>
+					<button type="button" class="btn btn-primary" id="btnDelete" disabled>
+						<i class="bi bi-trash"></i> 삭제
+					</button>
+				</div>
+			</div>
+
+			<!-- 테이블 영역 -->
+			<div class="table-responsive">
+				<table class="table">
+					<thead>
+						<tr>
+							<th class="text-center" style="width: 5%">
+								<label style="padding: 10px; cursor: pointer">
+									<input
+										type="checkbox"
+										id="selectAll"
+										class="form-check-input"
+									/>
+								</label>
+							</th>
+							<th style="width: 20%">작업시간</th>
+							<th style="width: 20%">대상 차종</th>
+							<th style="width: 25%">자재정보</th>
+							<th style="width: 10%">수량</th>
+							<th style="width: 20%">생성일</th>
+						</tr>
+					</thead>
+					<tbody id="workLogTableBody">
+						<!-- 더미 데이터는 JavaScript에서 생성됩니다 -->
+					</tbody>
+				</table>
+
+				<!-- 무한 스크롤 로딩 표시기 -->
+				<div id="loading">
+					<div class="spinner-border text-primary" role="status">
+						<span class="visually-hidden">로딩 중...</span>
+					</div>
+					<p>데이터를 불러오는 중...</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- 파일 업로드 모달 -->
+		<div
+			class="modal fade"
+			id="uploadModal"
+			tabindex="-1"
+			aria-labelledby="uploadModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="uploadModalLabel">파일 업로드</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<form
+							id="uploadForm"
+							th:action="@{/worklogs/upload}"
+							method="post"
+							enctype="multipart/form-data"
+						>
+							<div class="mb-3">
+								<label for="file" class="form-label"
+									>업로드할 파일을 선택하세요</label
+								>
+								<input
+									type="file"
+									class="form-control"
+									id="file"
+									name="file"
+									accept=".xlsx,.xls,.csv"
+									required
+								/>
+								<div class="form-text">
+									지원 형식: Excel(.xlsx, .xls), CSV(.csv)
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							취소
+						</button>
+						<button type="button" class="btn btn-primary" id="btnSubmitUpload">
+							업로드
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- 작업 로그가 없습니다 -->
+		<div
+			id="emptyMessage"
+			style="
+				display: none;
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				font-size: 2rem;
+				font-weight: bold;
+				text-align: center;
+			"
+		>
+			작업 로그가 없습니다.
+		</div>
+		<!-- 작업 내역 생성/수정 모달 -->
+		<div
+			class="modal fade"
+			id="worklogModal"
+			tabindex="-1"
+			aria-labelledby="worklogModalLabel"
+			aria-hidden="true"
+		>
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="worklogModalLabel">작업 내역 생성</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+							aria-label="Close"
+						></button>
+					</div>
+					<div class="modal-body">
+						<form id="worklogForm">
+							<input type="hidden" id="worklogId" name="id" />
+
+							<div class="modal-form-group">
+								<label class="modal-form-label" for="workDatetime"
+									>작업 시간</label
+								>
+								<input
+									type="text"
+									class="modal-form-input"
+									id="workDatetime"
+									name="workDatetime"
+									required
+								/>
+							</div>
+
+							<div class="modal-form-group">
+								<label class="modal-form-label" for="carModel">대상 차종</label>
+								<select
+									class="modal-form-input"
+									id="carModel"
+									name="carModel"
+									required
+								>
+									<option value="">선택하세요</option>
+									<option value="MX5">MX5</option>
+									<option value="XS4">XS4</option>
+									<option value="Dd">Dd</option>
+									<option value="DDd">DDd</option>
+								</select>
+							</div>
+
+							<div class="modal-form-group">
+								<label class="modal-form-label" for="materialCode"
+									>자재 정보</label
+								>
+								<input
+									type="text"
+									class="modal-form-input"
+									id="materialCode"
+									name="materialCode"
+									required
+								/>
+							</div>
+
+							<div class="modal-form-group">
+								<label class="modal-form-label" for="quantity">수량</label>
+								<input
+									type="number"
+									class="modal-form-input"
+									id="quantity"
+									name="quantity"
+									min="1"
+									required
+								/>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-dark"
+							id="btnSubmitWorklog"
+							style="width: 120px"
+						>
+							완료
+						</button>
+						<button
+							type="button"
+							class="btn btn-dark"
+							data-bs-dismiss="modal"
+							style="width: 120px"
+						>
+							취소
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 스크립트 -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				// 전역 변수
+				let currentPage = 1;
+				const pageSize = 20;
+				let loading = false;
+				let hasMoreData = true;
+				let selectedDate = null;
+				let editMode = false;
+
+				// 더미 데이터 생성
+				const dummyData = generateDummyData(40);
+				renderDummyData(dummyData);
+
+				// 모달 초기화
+				const uploadModal = new bootstrap.Modal(
+					document.getElementById('uploadModal')
+				);
+				const worklogModal = new bootstrap.Modal(
+					document.getElementById('worklogModal')
+				);
+
+				// 날짜 선택 버튼 초기화
+				const dateBtn = document.getElementById('btnDate');
+				const datePicker = flatpickr(dateBtn, {
+					locale: 'ko',
+					dateFormat: 'Y-m-d',
+					onChange: function (selectedDates, dateStr) {
+						selectedDate = dateStr;
+						dateBtn.textContent = '날짜: ' + dateStr;
+						// 선택한 날짜로 데이터 필터링
+						filterDataByDate(dateStr);
+					},
+				});
+
+				// 작업시간 입력 필드 초기화
+				flatpickr('#workDatetime', {
+					locale: 'ko',
+					enableTime: true,
+					dateFormat: 'Y-m-d H:i',
+					time_24hr: true,
+				});
+
+				// 업로드 버튼 클릭 처리
+				document
+					.getElementById('btnUpload')
+					.addEventListener('click', function () {
+						uploadModal.show();
+					});
+
+				// 생성 버튼 클릭 처리
+				document
+					.getElementById('btnCreate')
+					.addEventListener('click', function () {
+						editMode = false;
+						document.getElementById('worklogModalLabel').textContent =
+							'작업 내역 생성';
+						document.getElementById('worklogId').value = '';
+						document.getElementById('worklogForm').reset();
+						worklogModal.show();
+					});
+
+				// 테이블 행 클릭 처리 (수정 모달)
+				document
+					.getElementById('workLogTableBody')
+					.addEventListener('click', function (e) {
+						// 체크박스 클릭은 무시
+						if (e.target.type === 'checkbox') return;
+
+						const row = e.target.closest('tr');
+						if (row) {
+							editMode = true;
+							const cells = row.cells;
+							const id = row.dataset.id;
+
+							document.getElementById('worklogModalLabel').textContent =
+								'작업 내역 수정';
+							document.getElementById('worklogId').value = id;
+							document.getElementById('workDatetime').value =
+								cells[1].textContent.trim();
+							document.getElementById('carModel').value =
+								cells[2].textContent.trim();
+							document.getElementById('materialCode').value =
+								cells[3].textContent.trim();
+							document.getElementById('quantity').value =
+								cells[4].textContent.trim();
+
+							worklogModal.show();
+						}
+					});
+
+				// 작업 내역 폼 제출 처리
+				document
+					.getElementById('btnSubmitWorklog')
+					.addEventListener('click', function () {
+						const form = document.getElementById('worklogForm');
+						if (!form.checkValidity()) {
+							form.reportValidity();
+							return;
+						}
+
+						const id = document.getElementById('worklogId').value;
+						const workDatetime = document.getElementById('workDatetime').value;
+						const carModel = document.getElementById('carModel').value;
+						const materialCode = document.getElementById('materialCode').value;
+						const quantity = document.getElementById('quantity').value;
+
+						// 실제 API 호출 대신 더미 데이터 업데이트
+						if (editMode) {
+							// 수정 로직
+							updateDummyData(
+								id,
+								workDatetime,
+								carModel,
+								materialCode,
+								quantity
+							);
+							alert('작업 내역이 수정되었습니다.');
+						} else {
+							// 생성 로직
+							addDummyData(workDatetime, carModel, materialCode, quantity);
+							alert('작업 내역이 생성되었습니다.');
+						}
+
+						worklogModal.hide();
+					});
+
+				// 업로드 제출 처리
+				document
+					.getElementById('btnSubmitUpload')
+					.addEventListener('click', function () {
+						const fileInput = document.getElementById('file');
+						if (fileInput.files.length > 0) {
+							alert('파일이 업로드되었습니다.');
+							uploadModal.hide();
+						} else {
+							alert('업로드할 파일을 선택해주세요.');
+						}
+					});
+
+				// 전체 선택 체크박스
+				document
+					.getElementById('selectAll')
+					.addEventListener('change', function () {
+						const checkboxes = document.querySelectorAll(
+							'input[name="selectedIds"]'
+						);
+						checkboxes.forEach((checkbox) => {
+							checkbox.checked = this.checked;
+						});
+
+						updateDeleteButton();
+					});
+
+				// 개별 체크박스 변경 시 삭제 버튼 상태 업데이트
+				document.addEventListener('change', function (e) {
+					if (e.target && e.target.name === 'selectedIds') {
+						updateDeleteButton();
+					}
+				});
+
+				// 삭제 버튼 상태 업데이트 함수
+				function updateDeleteButton() {
+					const selectedCount = document.querySelectorAll(
+						'input[name="selectedIds"]:checked'
+					).length;
+					document.getElementById('btnDelete').disabled = selectedCount === 0;
+				}
+
+				// 삭제 버튼 클릭 처리
+				document
+					.getElementById('btnDelete')
+					.addEventListener('click', function () {
+						const selectedCheckboxes = document.querySelectorAll(
+							'input[name="selectedIds"]:checked'
+						);
+						const selectedIds = Array.from(selectedCheckboxes).map(
+							(checkbox) => checkbox.value
+						);
+
+						if (selectedIds.length > 0) {
+							if (confirm('선택한 작업 로그를 삭제하시겠습니까?')) {
+								// 실제 API 호출 대신 더미 데이터에서 삭제
+								deleteDummyData(selectedIds);
+								alert('선택한 작업 로그가 삭제되었습니다.');
+							}
+						}
+					});
+
+				// 무한 스크롤 구현
+				window.addEventListener('scroll', function () {
+					if (loading || !hasMoreData) return;
+
+					// 페이지 하단에 도달했는지 확인
+					if (
+						window.innerHeight + window.scrollY >=
+						document.body.offsetHeight - 200
+					) {
+						currentPage++;
+						// 추가 데이터를 로드하는 로직 (실제 구현에서는 API 호출)
+						console.log(`페이지 ${currentPage} 로드 중...`);
+						// 여기서는 더 데이터가 없다고 가정
+						hasMoreData = false;
+					}
+				});
+
+				// 더미 데이터 생성 함수
+				function generateDummyData(count) {
+					const data = [];
+					const carModels = ['MX5', 'XS4', 'Dd', 'DDd'];
+					const materialCodes = [
+						'82650R6400PE2',
+						'62510Q5000',
+						'86350H1000',
+						'97250J9000',
+						'82651R2100',
+						'92101Q5000',
+						'86150R6000',
+						'64400Q7000',
+						'85790Q7100',
+					];
+
+					for (let i = 1; i <= count; i++) {
+						const date = new Date();
+						date.setDate(date.getDate() - Math.floor(Math.random() * 30)); // 최근 30일 내
+						date.setHours(Math.floor(Math.random() * 24));
+						date.setMinutes(Math.floor(Math.random() * 60));
+
+						const workDate = new Date(date);
+						const createdAt = new Date(date);
+						createdAt.setHours(
+							createdAt.getHours() + Math.floor(Math.random() * 5)
+						);
+
+						data.push({
+							id: i,
+							workDatetime: formatDateTime(workDate),
+							carModel: carModels[Math.floor(Math.random() * carModels.length)],
+							materialCode:
+								materialCodes[Math.floor(Math.random() * materialCodes.length)],
+							quantity: Math.floor(Math.random() * 50) + 1,
+							createdAt: formatDateTime(createdAt),
+						});
+					}
+
+					return data;
+				}
+
+				// 더미 데이터 렌더링 함수
+				function renderDummyData(data) {
+					const tableBody = document.getElementById('workLogTableBody');
+					tableBody.innerHTML = '';
+
+					// 더미 데이터가 없을 경우 (1:: 테이블에 메시지 출력)
+					// if (data.length === 0) {
+					// 	const row = document.createElement('tr');
+					// 	const cell = document.createElement('td');
+					// 	cell.colSpan = 6; // 열 전체를 차지하도록
+					// 	cell.textContent = '작업 로그가 없습니다';
+					// 	cell.style.textAlign = 'center';
+					// 	row.appendChild(cell);
+					// 	tableBody.appendChild(row);
+					// 	return;
+					// }
+
+					// 더미 데이터가 없을 경우 (2:: 테이블 숨기고 메시지 출력)
+					const tableResponsive = document.querySelector('.table-responsive');
+					const emptyMessage = document.getElementById('emptyMessage');
+
+					if (data.length === 0) {
+						tableResponsive.style.display = 'none';
+						emptyMessage.style.display = 'block';
+					} else {
+						emptyMessage.style.display = 'none';
+						tableResponsive.style.display = 'block';
+						tableBody.innerHTML = '';
+					}
+
+					data.forEach((workLog) => {
+						const row = document.createElement('tr');
+						row.dataset.id = workLog.id;
+
+						// 체크박스 셀
+						const checkboxCell = document.createElement('td');
+						checkboxCell.className = 'text-center';
+						const checkbox = document.createElement('input');
+						checkbox.type = 'checkbox';
+						checkbox.name = 'selectedIds';
+						checkbox.value = workLog.id;
+						checkbox.className = 'form-check-input';
+						checkbox.addEventListener('change', updateDeleteButton);
+						checkbox.addEventListener('click', function (e) {
+							e.stopPropagation(); // 행 클릭 이벤트 전파 방지
+						});
+						checkboxCell.appendChild(checkbox);
+						row.appendChild(checkboxCell);
+
+						// 작업시간 셀
+						const workDatetimeCell = document.createElement('td');
+						workDatetimeCell.textContent = workLog.workDatetime;
+						row.appendChild(workDatetimeCell);
+
+						// 차종 셀
+						const carModelCell = document.createElement('td');
+						carModelCell.textContent = workLog.carModel;
+						row.appendChild(carModelCell);
+
+						// 자재 셀
+						const materialCodeCell = document.createElement('td');
+						materialCodeCell.textContent = workLog.materialCode;
+						row.appendChild(materialCodeCell);
+
+						// 수량 셀
+						const quantityCell = document.createElement('td');
+						quantityCell.textContent = workLog.quantity;
+						row.appendChild(quantityCell);
+
+						// 생성일 셀
+						const createdAtCell = document.createElement('td');
+						createdAtCell.textContent = workLog.createdAt;
+						row.appendChild(createdAtCell);
+
+						tableBody.appendChild(row);
+					});
+				}
+
+				// 날짜별 데이터 필터링 함수
+				function filterDataByDate(dateStr) {
+					const filteredData = dummyData.filter((item) => {
+						return item.workDatetime.startsWith(dateStr);
+					});
+
+					renderDummyData(filteredData);
+				}
+
+				// 더미 데이터 업데이트 함수 (수정)
+				function updateDummyData(
+					id,
+					workDatetime,
+					carModel,
+					materialCode,
+					quantity
+				) {
+					const index = dummyData.findIndex((item) => item.id == id);
+					if (index !== -1) {
+						dummyData[index].workDatetime = workDatetime;
+						dummyData[index].carModel = carModel;
+						dummyData[index].materialCode = materialCode;
+						dummyData[index].quantity = quantity;
+
+						// 화면 갱신
+						renderDummyData(dummyData);
+					}
+				}
+
+				// 더미 데이터 추가 함수 (생성)
+				function addDummyData(workDatetime, carModel, materialCode, quantity) {
+					const newId =
+						dummyData.length > 0
+							? Math.max(...dummyData.map((item) => item.id)) + 1
+							: 1;
+					const now = formatDateTime(new Date());
+
+					dummyData.unshift({
+						id: newId,
+						workDatetime: workDatetime,
+						carModel: carModel,
+						materialCode: materialCode,
+						quantity: quantity,
+						createdAt: now,
+					});
+
+					// 화면 갱신
+					renderDummyData(dummyData);
+				}
+
+				// 더미 데이터 삭제 함수
+				function deleteDummyData(ids) {
+					ids.forEach((id) => {
+						const index = dummyData.findIndex((item) => item.id == id);
+						if (index !== -1) {
+							dummyData.splice(index, 1);
+						}
+					});
+
+					// 화면 갱신
+					renderDummyData(dummyData);
+				}
+
+				// 날짜 포맷팅 함수
+				function formatDateTime(date) {
+					const year = date.getFullYear();
+					const month = String(date.getMonth() + 1).padStart(2, '0');
+					const day = String(date.getDate()).padStart(2, '0');
+					const hours = String(date.getHours()).padStart(2, '0');
+					const minutes = String(date.getMinutes()).padStart(2, '0');
+
+					return `${year}-${month}-${day} ${hours}:${minutes}`;
+				}
+			});
+		</script>
+	</body>
+</html>
