@@ -1,0 +1,51 @@
+# 테스트 환경 설정 (SQLite 사용)
+spring:
+  # 데이터소스 설정 (TestSQLiteConfig.java에서 정의)
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:file::memory:?cache=shared
+
+  # SQL 초기화 비활성화 (TestSQLiteConfig에서 처리)
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema/schema-sqlite.sql
+      data-locations: classpath:data/test-data-sqlite.sql
+
+  # 테스트 관련 설정
+  test:
+    database:
+      replace: none  # 자동 데이터베이스 대체 비활성화
+
+  # 테스트 환경에서는 캐시 비활성화
+  thymeleaf:
+    cache: false
+
+# MyBatis 설정
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    # SQLite 사용 설정
+    variables:
+      databaseType: sqlite
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.calman.domain
+
+# 로깅 설정
+logging:
+  level:
+    com.calman: debug
+    org.springframework: info
+    org.mybatis: debug
+    org.sqlite: debug  # SQLite 디버깅 로그 활성화
+
+# Swagger/OpenAPI 테스트 설정 비활성화
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# 서버 설정
+server:
+  port: 0  # 랜덤 포트 사용 (테스트에서 포트 충돌 방지)

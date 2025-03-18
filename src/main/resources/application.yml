@@ -1,0 +1,104 @@
+# 공통 설정
+spring:
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:sqlite:crud-board.sqlite
+    driver-class-name: org.sqlite.JDBC
+  sql:
+    init:
+      mode: embedded
+      schema-locations: classpath:schema/worklogs.sql
+  thymeleaf:
+    prefix: classpath:/templates/
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+# MyBatis 공통 설정
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.calman.domain
+
+# 서버 공통 설정
+server:
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      force: true
+
+# Swagger/OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  packages-to-scan: com.calman
+  info:
+    title: 작업 로그 관리 시스템 API
+    version: 1.0.0
+    description: 작업 로그 관리 시스템 API 명세서
+    contact:
+      name: 개발팀
+      email: dev@calman.co.kr
+
+---
+# 개발 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+  devtools:
+    restart:
+      enabled: true
+  thymeleaf:
+    cache: false
+
+# 개발환경 서버 설정
+server:
+  port: 8080
+
+# 개발환경 로깅 설정
+logging:
+  level:
+    com.calman: debug
+    org.springframework: info
+    org.mybatis: debug
+  file:
+    name: ./logs/application-dev.log
+
+# 개발환경 MyBatis 설정
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+---
+# 운영 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: prod
+  devtools:
+    restart:
+      enabled: false
+  thymeleaf:
+    cache: true
+
+# 운영환경 서버 설정
+server:
+  port: 80
+
+# 운영환경 로깅 설정
+logging:
+  level:
+    com.calman: info
+    org.springframework: warn
+  file:
+    name: ./logs/application-prod.log
+    max-size: 10MB
+    max-history: 30
