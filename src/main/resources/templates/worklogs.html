@@ -23,7 +23,6 @@
 				--light-purple: #9d6ede;
 				--dark-purple: #5a3b8b;
 				--highlight-purple: #b794f6;
-			}
 
 			body {
 				font-family: 'Noto Sans KR', sans-serif;
@@ -173,6 +172,84 @@
 			.form-check-input {
 				transform: scale(1.5);
 				cursor: pointer;
+			}
+
+				/* Toast 시작 */
+				/* 하단 중앙 Toast 컨테이너 */
+				.toast-container-bottom {
+					position: fixed;
+					bottom: 20px;
+					left: 50%;
+					transform: translateX(-50%);
+					z-index: 11;
+				}
+
+				/* Toast 애니메이션: 나타날 때는 위로 슬라이드, 사라질 때는 아래로 슬라이드 */
+				@keyframes slideUp {
+					from {
+						transform: translateY(100%);
+						opacity: 0;
+					}
+					to {
+						transform: translateY(0);
+						opacity: 1;
+					}
+				}
+
+				@keyframes slideDown {
+					from {
+						transform: translateY(0);
+						opacity: 1;
+					}
+					to {
+						transform: translateY(100%);
+						opacity: 0;
+					}
+				}
+
+				/* 토스트가 사라질 때 적용할 클래스 */
+				.toast.hide-animation {
+					animation: slideDown 0.5s ease-in forwards;
+				}
+
+				/* 토스트에 애니메이션 적용 (나타날 때) */
+				.toast {
+					animation: slideUp 0.5s ease-out;
+					min-width: 300px;
+					font-size: 1.2rem;
+				}
+
+				/* 토스트 헤더 (굵은 폰트, 크기 적용) */
+				.toast .toast-header {
+					font-weight: 700;
+					font-size: 1.2rem;
+				}
+
+				/* 상태별 색상 */
+				/* 기본 알림 (Info) */
+				.toast-info .toast-header {
+					background-color: #17a2b8;
+					color: #ffffff;
+				}
+
+				/* 성공 상태 */
+				.toast-success .toast-header {
+					background-color: #28a745;
+					color: #ffffff;
+				}
+
+				/* 경고 상태 */
+				.toast-warning .toast-header {
+					background-color: #ffc107;
+					color: #000000;
+				}
+
+				/* 에러 상태 */
+				.toast-error .toast-header {
+					background-color: #dc3545;
+					color: #ffffff;
+				}
+			/*	Toast 끝  */
 			}
 		</style>
 	</head>
@@ -414,6 +491,21 @@
 			</div>
 		</div>
 
+<!--	Toast 영역	-->
+		<div aria-live="polite" aria-atomic="true" class="toast-container-bottom">
+			<div id="liveToast" class="toast toast-info" role="alert" aria-live="assertive" aria-atomic="true">
+				<div class="toast-header">
+					<strong class="me-auto">알림</strong>
+					<small>방금</small>
+					<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+				<div class="toast-body">
+					<!-- 메시지 출력 -->
+				</div>
+			</div>
+		</div>
+
+
 		<!-- 스크립트 -->
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -459,6 +551,9 @@
 					enableTime: true,
 					dateFormat: 'Y-m-d H:i',
 					time_24hr: true,
+					onChange: function(selectedDates, dateStr, instance) {
+						instance.close();
+					}
 				});
 
 				// 업로드 버튼 클릭 처리
@@ -528,6 +623,7 @@
 						// 실제 API 호출 대신 더미 데이터 업데이트
 						if (editMode) {
 							// 수정 로직
+							// TODO :: 바뀐 내용 없으면 수정 불가 기능
 							updateDummyData(
 								id,
 								workDatetime,
@@ -535,11 +631,11 @@
 								materialCode,
 								quantity
 							);
-							alert('작업 내역이 수정되었습니다.');
+							showToast('작업 내역이 수정되었습니다.', 'success');
 						} else {
 							// 생성 로직
 							addDummyData(workDatetime, carModel, materialCode, quantity);
-							alert('작업 내역이 생성되었습니다.');
+							showToast('작업 내역이 생성되었습니다.', 'info');
 						}
 
 						worklogModal.hide();
@@ -551,10 +647,10 @@
 					.addEventListener('click', function () {
 						const fileInput = document.getElementById('file');
 						if (fileInput.files.length > 0) {
-							alert('파일이 업로드되었습니다.');
+							showToast('파일이 업로드되었습니다.', 'success');
 							uploadModal.hide();
 						} else {
-							alert('업로드할 파일을 선택해주세요.');
+							showToast('업로드할 파일을 선택해주세요.', 'warning');
 						}
 					});
 
@@ -602,7 +698,7 @@
 							if (confirm('선택한 작업 로그를 삭제하시겠습니까?')) {
 								// 실제 API 호출 대신 더미 데이터에서 삭제
 								deleteDummyData(selectedIds);
-								alert('선택한 작업 로그가 삭제되었습니다.');
+								showToast('선택한 작업 로그가 삭제되었습니다.', 'error');
 							}
 						}
 					});
@@ -817,7 +913,46 @@
 
 					return `${year}-${month}-${day} ${hours}:${minutes}`;
 				}
+
+			// 	Toast 메세지 표시 함수
+				const showToast = (message, type = 'info', duration = 1500) => {
+					const toastEl = document.getElementById('liveToast');
+					// 기존 상태 관련 클래스 제거 및 hide-animation 제거(초기화)
+					toastEl.classList.remove('toast-info', 'toast-success', 'toast-warning', 'toast-error', 'hide-animation');
+
+					// type에 따라 해당 클래스 추가
+					switch (type) {
+						case 'success':
+							toastEl.classList.add('toast-success');
+							break;
+						case 'warning':
+							toastEl.classList.add('toast-warning');
+							break;
+						case 'error':
+							toastEl.classList.add('toast-error');
+							break;
+						default:
+							toastEl.classList.add('toast-info');
+					}
+
+					toastEl.querySelector('.toast-body').textContent = message;
+					const toastInstance = new bootstrap.Toast(toastEl, { autohide: false });
+					toastInstance.show();
+
+					// duration 후에 hide-animation 클래스를 추가하고, 애니메이션이 끝난 후에 실제로 hide
+					setTimeout(() => {
+						toastEl.classList.add('hide-animation');
+						// 500ms는 애니메이션 지속시간과 동일
+						setTimeout(() => {
+							toastInstance.hide();
+							// 다음 사용을 위해 hide-animation 클래스를 제거
+							toastEl.classList.remove('hide-animation');
+						}, 500);
+					}, duration);
+				};
 			});
+		// 	TODO: enter 키 확인, esc 끄기 버튼 기능 구현
 		</script>
 	</body>
 </html>
+

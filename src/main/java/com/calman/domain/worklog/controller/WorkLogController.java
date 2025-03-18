@@ -150,9 +150,9 @@ public class WorkLogController {
   /**
    * 작업 로그 대시보드 페이지
    */
-  @GetMapping("/dashboard")
+  @GetMapping("/")
   public String dashboard(Model model) {
     // 여기에 대시보드에 필요한 데이터를 추가
-    return "worklogs/dashboard";
+    return "worklogs";
   }
 }
