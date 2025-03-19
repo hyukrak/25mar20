@@ -19,22 +19,37 @@
 
 body {
   font-family: 'Noto Sans KR', sans-serif;
-  padding: 20px;
-  background-color: #f8f9fa;
+  padding: 0;
+  margin: 0;
+  background-color: var(--light-beige);
+  overflow-x: hidden;
+}
+
+.container {
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.content-container {
 }
 
 .header-container {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--main-gray);
+  padding: 10px 0;
 }
 
 .logo-container {
-  width: 120px;
-  height: 50px;
-  margin-right: 20px;
+  width: 20%;
+  margin: 10px;
   display: flex;
   align-items: center;
+  position: absolute;
 }
 
 .logo-container img {
@@ -73,18 +88,20 @@ body {
   }
 }
 
+/* 버튼 컨테이너 스타일 */
 .button-container {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
+  position: sticky;
+  top: 80px; /* 헤더 컨테이너 다음 위치 */
+  z-index: 90;
+  padding: 10px 0;
 }
 
 .date-button-group {
-  margin-left: 5%;
 }
 
 .action-button-group {
-  margin-right: 5%;
   display: flex;
   gap: 10px;
 }

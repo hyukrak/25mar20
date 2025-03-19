@@ -1,4 +1,26 @@
-/**
+/* 작업시간 상태별 스타일 */
+.status-danger {
+  color: var(--status-danger) !important;
+  font-weight: 600 !important;
+}
+
+.status-warning {
+  color: var(--status-warning) !important;
+  font-weight: 600 !important;
+}
+
+.status-caution {
+  color: var(--status-caution) !important;
+  font-weight: 600 !important;
+}
+
+.status-normal {
+  color: var(--status-normal) !important;
+}
+
+.status-passed {
+  color: var(--status-passed) !important;
+}/**
  * components.css - 작업 로그 시스템 컴포넌트 스타일
  * 버튼, 테이블 등의 UI 컴포넌트 스타일을 정의합니다.
  */
@@ -22,6 +44,8 @@
 /* 테이블 스타일 */
 .table-responsive {
   margin-bottom: 30px;
+  overflow-y: auto;
+  max-height: calc(100vh - 150px); /* 헤더 공간 제외한 최대 높이 */
 }
 
 .table-header {
@@ -29,60 +53,59 @@
   color: white;
 }
 
-.table th {
-  background-color: var(--main-gray);
-  color: white;
-  font-weight: 700; /* 더 굵게 */
-  font-size: 1.1rem; /* 더 크게 */
-  border: none;
-  text-align: center;
-  padding: 12px 8px; /* 패딩 추가 */
+/* 테이블 헤더 고정 */
+.table thead {
+  position: sticky;
+  top: 0px; /* 헤더 컨테이너와 버튼 컨테이너의 높이에 맞게 조정 */
+  z-index: 80;
+}
+
+.table thead th {
+  background-color: var(--main-gray) !important;
+  color: white !important;
+  font-weight: 700 !important; /* 더 굵게 */
+  font-size: 1.1rem !important; /* 더 크게 */
+  border: none !important;
+  text-align: center !important;
+  padding: 12px 8px !important; /* 패딩 추가 */
+  /* 그림자 효과 추가 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .table td {
-  vertical-align: middle;
-  text-align: center;
-  padding: 10px 8px;
+  vertical-align: middle !important;
+  text-align: center !important;
+  padding: 10px 8px !important;
 }
 
-/* 제브라 스타일 적용 */
-.table tr:nth-child(even) {
-  background-color: var(--light-beige);
+/* 제브라 스타일 적용 - 더 명확한 선택자 사용 */
+.table tbody tr:nth-child(even) {
+  background-color: var(--light-beige) !important;
 }
 
-.table tr:nth-child(odd) {
-  background-color: #ffffff;
+.table tbody tr:nth-child(odd) {
+  background-color: #ffffff !important;
 }
 
-/* 호버 효과 향상 */
+/* 호버 효과 향상 - 더 명확한 선택자와 !important 추가 */
 .table tbody tr:hover {
-  background-color: var(--medium-gray);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  background-color: var(--medium-gray) !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
 }
 
-/* 작업시간 상태별 스타일 */
-.status-danger {
-  color: var(--status-danger);
-  font-weight: 600;
+/* 제브라 스타일 재정의 - Bootstrap 스타일 덮어쓰기 */
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: #ffffff !important;
 }
 
-.status-warning {
-  color: var(--status-warning);
-  font-weight: 600;
+.table-striped > tbody > tr:nth-of-type(even) {
+  background-color: var(--light-beige) !important;
 }
 
-.status-caution {
-  color: var(--status-caution);
-  font-weight: 600;
-}
-
-.status-normal {
-  color: var(--status-normal);
-}
-
-.status-passed {
-  color: var(--status-passed);
+/* 호버 효과 재정의 - Bootstrap 스타일 덮어쓰기 */
+.table-hover > tbody > tr:hover {
+  background-color: var(--medium-gray) !important;
 }
 
 /* 체크박스 스타일 */

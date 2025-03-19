@@ -133,6 +133,11 @@ const UI = {
       });
     }
 
+    // 테이블 스타일 적용 (제브라 스타일과 호버 효과)
+    if (typeof applyTableStyles === 'function') {
+      applyTableStyles();
+    }
+
     // 전체 선택 체크박스 초기화
     document.getElementById('selectAll').checked = false;
     this.updateDeleteButton();

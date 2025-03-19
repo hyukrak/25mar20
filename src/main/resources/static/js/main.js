@@ -1,4 +1,51 @@
 /**
+ * 테이블 스타일을 직접 JavaScript로 적용하는 함수
+ * CSS가 제대로 적용되지 않을 때 사용
+ */
+function applyTableStyles() {
+  // 제브라 스타일 적용
+  document.querySelectorAll('.table tbody tr:nth-child(even)').forEach(row => {
+    row.style.backgroundColor = '#f3f0ec'; // --light-beige
+  });
+
+  document.querySelectorAll('.table tbody tr:nth-child(odd)').forEach(row => {
+    row.style.backgroundColor = '#ffffff';
+  });
+
+  // hover 이벤트를 위한 이벤트 리스너 추가
+  document.querySelectorAll('.table tbody tr').forEach(row => {
+    row.addEventListener('mouseenter', () => {
+      row.style.backgroundColor = '#d9d9d9'; // --medium-gray
+      row.style.cursor = 'pointer';
+    });
+
+    row.addEventListener('mouseleave', () => {
+      if (row.selectorIndex % 2 === 0) {
+        row.style.backgroundColor = '#f3f0ec'; // --light-beige for even rows
+      } else {
+        row.style.backgroundColor = '#ffffff'; // white for odd rows
+      }
+    });
+  });
+}
+
+// 테이블 데이터가 갱신될 때마다 스타일을 다시 적용
+document.addEventListener('DOMContentLoaded', function() {
+  // 기존 로직 실행 후 MutationObserver 설정
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      if (mutation.type === 'childList' && mutation.target.id === 'workLogTableBody') {
+        applyTableStyles();
+      }
+    });
+  });
+
+  // 테이블 바디 변경 감시
+  const tableBody = document.getElementById('workLogTableBody');
+  if (tableBody) {
+    observer.observe(tableBody, { childList: true });
+  }
+});/**
  * main.js - 작업 로그 시스템 메인 진입점
  * 애플리케이션 초기화 및 이벤트 리스너 설정을 담당합니다.
  */
@@ -46,6 +93,9 @@ function initializeModals() {
       instance.close();
     }
   });
+
+  // 테이블 스타일 직접 적용 - 스타일 문제 해결
+  applyTableStyles();
 }
 
 /**

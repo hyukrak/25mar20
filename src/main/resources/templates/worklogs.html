@@ -3,7 +3,6 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link rel="shortcut icon" href="http://samboant.cafe24.com/images/favicon.ico" type="image/x-icon">
 	<title>작업 로그 시스템</title>
 	<!-- 외부 CSS 라이브러리 -->
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
@@ -20,64 +19,67 @@
 <div class="container">
 	<div class="header-container">
 		<div class="logo-container">
-			<img src="https://www.samboant.com/files/attach/images/136/be831f83a5bf1c67ed9ca56673ddce2e.png" alt="SAMBO A&amp;T">
+<!--				<img src="https://www.samboant.com/files/attach/images/136/be831f83a5bf1c67ed9ca56673ddce2e.png" alt="SAMBO A&amp;T">-->
+				<img src="/images/img.png" alt="SAMBO A&amp;T">
 		</div>
 		<div class="page-header">작업내역</div>
 	</div>
 
-	<!-- 상단 버튼 컨테이너 -->
-	<div class="button-container">
-		<!-- 날짜 버튼 (작업시간 컬럼 위에 위치) -->
-		<div class="date-button-group">
-			<button type="button" class="btn btn-primary" id="btnDate">
-				<i class="bi bi-calendar"></i> 날짜
-			</button>
-		</div>
-
-		<!-- 작업 버튼들 (생성일 컬럼 위에 위치) -->
-		<div class="action-button-group">
-			<button type="button" class="btn btn-primary" id="btnUpload">
-				<i class="bi bi-upload"></i> 업로드
-			</button>
-			<button type="button" class="btn btn-primary" id="btnCreate">
-				<i class="bi bi-plus-circle"></i> 생성
-			</button>
-			<button type="button" class="btn btn-primary" id="btnDelete" disabled>
-				<i class="bi bi-trash"></i> 삭제
-			</button>
-		</div>
-	</div>
-
-	<!-- 테이블 영역 -->
-	<div class="table-responsive">
-		<table class="table">
-			<thead>
-			<tr>
-				<th class="text-center" style="width: 5%">
-					<label style="padding: 10px; cursor: pointer">
-						<input type="checkbox" id="selectAll" class="form-check-input" />
-					</label>
-				</th>
-				<th style="width: 15%">작업시간</th>
-				<th style="width: 8%">대상 차종</th>
-				<th style="width: 5%">색상</th>
-				<th style="width: 22%">제품 코드</th>
-				<th style="width: 30%">제품명</th>
-				<th style="width: 5%">수량</th>
-				<th style="width: 15%">생성일</th>
-			</tr>
-			</thead>
-			<tbody id="workLogTableBody">
-			<!-- 데이터는 JavaScript에서 동적으로 생성 -->
-			</tbody>
-		</table>
-
-		<!-- 무한 스크롤 로딩 표시기 -->
-		<div id="loading">
-			<div class="spinner-border text-primary" role="status">
-				<span class="visually-hidden">로딩 중...</span>
+	<div class="content-container">
+		<!-- 상단 버튼 컨테이너 -->
+		<div class="button-container">
+			<!-- 날짜 버튼 (작업시간 컬럼 위에 위치) -->
+			<div class="date-button-group">
+				<button type="button" class="btn btn-primary" id="btnDate">
+					<i class="bi bi-calendar"></i> 날짜
+				</button>
 			</div>
-			<p>데이터를 불러오는 중...</p>
+
+			<!-- 작업 버튼들 (생성일 컬럼 위에 위치) -->
+			<div class="action-button-group">
+				<button type="button" class="btn btn-primary" id="btnUpload">
+					<i class="bi bi-upload"></i> 업로드
+				</button>
+				<button type="button" class="btn btn-primary" id="btnCreate">
+					<i class="bi bi-plus-circle"></i> 생성
+				</button>
+				<button type="button" class="btn btn-primary" id="btnDelete" disabled>
+					<i class="bi bi-trash"></i> 삭제
+				</button>
+			</div>
+		</div>
+
+		<!-- 테이블 영역 -->
+		<div class="table-responsive">
+			<table class="table table-striped table-hover"><!-- table-striped 및 table-hover 클래스 추가 -->
+				<thead>
+				<tr>
+					<th class="text-center" style="width: 5%">
+						<label style="padding: 10px; cursor: pointer">
+							<input type="checkbox" id="selectAll" class="form-check-input" />
+						</label>
+					</th>
+					<th style="width: 15%">작업시간</th>
+					<th style="width: 8%">대상 차종</th>
+					<th style="width: 5%">색상</th>
+					<th style="width: 22%">제품 코드</th>
+					<th style="width: 30%">제품명</th>
+					<th style="width: 5%">수량</th>
+					<th style="width: 15%">생성일</th>
+				</tr>
+				</thead>
+				<tbody id="workLogTableBody">
+				<!-- 데이터는 JavaScript에서 동적으로 생성 -->
+				</tbody>
+			</table>
+
+			<!-- 무한 스크롤 로딩 표시기 -->
+			<div id="loading">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">로딩 중...</span>
+				</div>
+				<p>데이터를 불러오는 중...</p>
+			</div>
 		</div>
 	</div>
 </div>
