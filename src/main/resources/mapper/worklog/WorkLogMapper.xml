@@ -24,7 +24,7 @@
     SELECT
       wl_id,
       <!-- 날짜 포맷팅 -->
-      strftime('%y.%m.%d %H:%M', wl_work_datetime) as wl_work_datetime,
+      wl_work_datetime,
       wl_car_model,
       wl_product_color,
       wl_product_code,
@@ -47,14 +47,7 @@
       </if>
     </where>
     ORDER BY
-    <choose>
-      <when test="sortField != null and sortField != ''">
-        ${sortField} ${sortDirection}
-      </when>
-      <otherwise>
         wl_work_datetime ASC
-      </otherwise>
-    </choose>
   </select>
 
   <!-- 새 작업 로그 삽입 -->

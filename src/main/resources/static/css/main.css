@@ -1,0 +1,109 @@
+/**
+ * main.css - 작업 로그 시스템 기본 레이아웃 및 공통 스타일
+ */
+
+/* 전체 테마 색상 - 그레이/브라운 계열 */
+:root {
+  --main-gray: #595959;
+  --light-beige: #f3f0ec;
+  --medium-gray: #d9d9d9;
+  --dark-brown: #5a4e41;
+
+  /* 작업시간 상태 표시 색상 */
+  --status-danger: #ff3b30;
+  --status-warning: #ff9500;
+  --status-caution: #ffcc00;
+  --status-normal: #000000;
+  --status-passed: #8e8e93;
+}
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo-container {
+  width: 120px;
+  height: 50px;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.logo-container img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.page-header {
+  background-color: var(--main-gray);
+  color: white;
+  padding: 1rem;
+  flex-grow: 1;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* 태블릿에 최적화된 디자인 */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .container {
+    max-width: 95%;
+  }
+
+  .btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 1.1rem;
+  }
+
+  table {
+    font-size: 1.1rem;
+  }
+
+  th, td {
+    padding: 0.8rem !important;
+  }
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.date-button-group {
+  margin-left: 5%;
+}
+
+.action-button-group {
+  margin-right: 5%;
+  display: flex;
+  gap: 10px;
+}
+
+/* 로딩 표시기 */
+#loading {
+  display: none;
+  text-align: center;
+  padding: 20px;
+}
+
+/* 빈 데이터 메시지 */
+#emptyMessage {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+}

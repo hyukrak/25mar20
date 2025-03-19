@@ -1,0 +1,44 @@
+/**
+ * modal.css - 작업 로그 시스템 모달 스타일
+ * 모달 창과 관련된 모든 스타일을 정의합니다.
+ */
+
+/* 모달 기본 스타일 */
+.modal-header {
+  background-color: var(--main-gray);
+  color: white;
+}
+
+.modal-content {
+  border-radius: 0;
+  border: 1px solid #000;
+}
+
+/* 모달 폼 스타일 */
+.modal-form-group {
+  margin-bottom: 1rem;
+}
+
+.modal-form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.modal-form-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #000;
+}
+
+.modal-footer {
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* 파일 업로드 모달 추가 스타일 */
+.form-text {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}

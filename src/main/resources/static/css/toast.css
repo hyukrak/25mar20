@@ -1,0 +1,79 @@
+/**
+ * toast.css - 작업 로그 시스템 토스트 알림 스타일
+ * 토스트 알림의 애니메이션과 스타일을 정의합니다.
+ */
+
+/* 하단 중앙 Toast 컨테이너 */
+.toast-container-bottom {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+}
+
+/* Toast 애니메이션: 나타날 때는 위로 슬라이드, 사라질 때는 아래로 슬라이드 */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* 토스트가 사라질 때 적용할 클래스 */
+.toast.hide-animation {
+  animation: slideDown 0.5s ease-in forwards;
+}
+
+/* 토스트에 애니메이션 적용 (나타날 때) */
+.toast {
+  animation: slideUp 0.5s ease-out;
+  min-width: 300px;
+  font-size: 1.2rem;
+}
+
+/* 토스트 헤더 (굵은 폰트, 크기 적용) */
+.toast .toast-header {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+/* 상태별 색상 */
+/* 기본 알림 (Info) */
+.toast-info .toast-header {
+  background-color: #17a2b8;
+  color: #ffffff;
+}
+
+/* 성공 상태 */
+.toast-success .toast-header {
+  background-color: #28a745;
+  color: #ffffff;
+}
+
+/* 경고 상태 */
+.toast-warning .toast-header {
+  background-color: #ffc107;
+  color: #000000;
+}
+
+/* 에러 상태 */
+.toast-error .toast-header {
+  background-color: #dc3545;
+  color: #ffffff;
+}
