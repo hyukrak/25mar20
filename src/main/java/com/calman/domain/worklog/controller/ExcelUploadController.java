@@ -1,6 +1,7 @@
 package com.calman.domain.worklog.controller;
 
 import com.calman.domain.worklog.dto.WorkLogDTO;
+import com.calman.domain.worklog.dto.WorkLogDTO.CreateRequest;
 import com.calman.domain.worklog.service.WorkLogService;
 import java.text.SimpleDateFormat;
 import lombok.RequiredArgsConstructor;
@@ -118,12 +119,6 @@ public class ExcelUploadController {
         Cell timeCell = row.getCell(DATETIME_COL); // C열
         Cell colorCell = row.getCell(COLOR_COL); // B열
 
-        // FormulaEvaluator 생성
-        FormulaEvaluator formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
-
-        // 셀 값 평가
-        CellValue evalueatedCell = formulaEvaluator.evaluate(timeCell);
-
         // 시작 시간이나 색상이 비어 있으면 더 이상 처리하지 않음
         boolean timeEmpty = (timeCell == null || timeCell.getCellType() == CellType.BLANK);
         boolean colorEmpty = (colorCell == null || colorCell.getCellType() == CellType.BLANK);
@@ -193,7 +188,7 @@ public class ExcelUploadController {
               }
 
               // CreateRequest 생성
-              WorkLogDTO.CreateRequest request = new WorkLogDTO.CreateRequest();
+              CreateRequest request = new CreateRequest();
 
               // 작업시간 설정 (문자열 형식 그대로 설정)
               request.setWorkDatetime(workDatetimeStr);
