@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Setter;
 
 @Data
 @Builder
@@ -13,7 +14,7 @@ import lombok.AllArgsConstructor;
 public class WorkLogDTO {
 
   private Long id;
-  private LocalDateTime workDatetime;
+  private String workDatetime;
   private String carModel;
   private String productColor;
   private String productCode;
@@ -27,12 +28,21 @@ public class WorkLogDTO {
   @AllArgsConstructor
   public static class CreateRequest {
 
-    private LocalDateTime workDatetime;
+    @Setter
+    private String workDatetimeStr;
     private String carModel;
     private String productColor;
     private String productCode;
     private String productName;
     private Integer quantity;
+
+    public String getWorkDatetime() {
+      return this.workDatetimeStr;
+    }
+
+    public void setWorkDatetime(String workDatetimeStr) {
+      this.workDatetimeStr = workDatetimeStr;
+    }
   }
 
   // 기존 작업 로그 업데이트를 위한 요청 DTO
@@ -41,7 +51,7 @@ public class WorkLogDTO {
   @AllArgsConstructor
   public static class UpdateRequest {
 
-    private LocalDateTime workDatetime;
+    private String workDatetime;
     private String carModel;
     private String productColor;
     private String productCode;
@@ -56,7 +66,7 @@ public class WorkLogDTO {
   public static class ListResponse {
 
     private Long id;
-    private LocalDateTime workDatetime;
+    private String workDatetime;
     private String carModel;
     private String productColor;
     private String productCode;
@@ -73,7 +83,7 @@ public class WorkLogDTO {
   public static class DetailResponse {
 
     private Long id;                     // 고유 ID
-    private LocalDateTime workDatetime;  // 작업 일시
+    private String workDatetime;  // 작업 일시
     private String carModel;             // 차량 모델
     private String productColor;         // 제품 색상
     private String productCode;          // 제품 코드

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS work_logs (
        wl_id INTEGER PRIMARY KEY AUTOINCREMENT,                        --  '작업 로그 고유 ID',
-       wl_work_datetime DATETIME NOT NULL,                             --  '작업시간 - YYYY-MM-DD HH:MM:SS 형식',
+       wl_work_datetime TEXT(20) NOT NULL,                             --  '작업시간 - YY.MM.DD HH:MM 형식',
        wl_car_model TEXT NOT NULL,                                     --  '차종',
        wl_product_color TEXT(7) NOT NULL,
        wl_product_code  TEXT(20) NOT NULL,

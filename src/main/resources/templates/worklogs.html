@@ -284,25 +284,23 @@
 			<div class="table-responsive">
 				<table class="table">
 					<thead>
-						<tr>
-							<th class="text-center" style="width: 5%">
-								<label style="padding: 10px; cursor: pointer">
-									<input
-										type="checkbox"
-										id="selectAll"
-										class="form-check-input"
-									/>
-								</label>
-							</th>
-							<th style="width: 20%">작업시간</th>
-							<th style="width: 20%">대상 차종</th>
-							<th style="width: 25%">자재정보</th>
-							<th style="width: 10%">수량</th>
-							<th style="width: 20%">생성일</th>
-						</tr>
+					<tr>
+						<th class="text-center" style="width: 5%">
+							<label style="padding: 10px; cursor: pointer">
+								<input type="checkbox" id="selectAll" class="form-check-input" />
+							</label>
+						</th>
+						<th style="width: 15%">작업시간</th>
+						<th style="width: 15%">대상 차종</th>
+						<th style="width: 10%">색상</th>
+						<th style="width: 20%">제품 코드</th>
+						<th style="width: 20%">제품명</th>
+						<th style="width: 5%">수량</th>
+						<th style="width: 10%">생성일</th>
+					</tr>
 					</thead>
 					<tbody id="workLogTableBody">
-						<!-- 더미 데이터는 JavaScript에서 생성됩니다 -->
+					<!-- 데이터는 JavaScript에서 생성됩니다 -->
 					</tbody>
 				</table>
 
@@ -318,53 +316,63 @@
 
 		<!-- 파일 업로드 모달 -->
 		<div
-			class="modal fade"
-			id="uploadModal"
-			tabindex="-1"
-			aria-labelledby="uploadModalLabel"
-			aria-hidden="true"
+				class="modal fade"
+				id="uploadModal"
+				tabindex="-1"
+				aria-labelledby="uploadModalLabel"
+				aria-hidden="true"
 		>
 			<div class="modal-dialog modal-dialog-centered">
 				<div class="modal-content">
 					<div class="modal-header">
 						<h5 class="modal-title" id="uploadModalLabel">파일 업로드</h5>
 						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"
+								type="button"
+								class="btn-close"
+								data-bs-dismiss="modal"
+								aria-label="Close"
 						></button>
 					</div>
 					<div class="modal-body">
 						<form
-							id="uploadForm"
-							th:action="@{/worklogs/upload}"
-							method="post"
-							enctype="multipart/form-data"
+								id="uploadForm"
+								th:action="@{/excel/upload}"
+								method="post"
+								enctype="multipart/form-data"
 						>
 							<div class="mb-3">
 								<label for="file" class="form-label"
-									>업로드할 파일을 선택하세요</label
+								>업로드할 파일을 선택하세요</label
 								>
 								<input
-									type="file"
-									class="form-control"
-									id="file"
-									name="file"
-									accept=".xlsx,.xls,.csv"
-									required
+										type="file"
+										class="form-control"
+										id="file"
+										name="file"
+										accept=".xlsx,.xls,.csv"
+										required
 								/>
 								<div class="form-text">
 									지원 형식: Excel(.xlsx, .xls), CSV(.csv)
 								</div>
 							</div>
+							<div class="mb-3">
+								<label for="carModel" class="form-label">대상 차종</label>
+								<select class="form-control" id="carModelSelect" name="carModel" required>
+									<option value="">차종을 선택하세요</option>
+									<option value="MX5a-분리">MX5a-분리</option>
+									<option value="AR1 조립">AR1 조립</option>
+									<option value="ON SUB">ON SUB</option>
+									<option value="ON 조립">ON 조립</option>
+								</select>
+							</div>
 						</form>
 					</div>
 					<div class="modal-footer">
 						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal"
+								type="button"
+								class="btn btn-secondary"
+								data-bs-dismiss="modal"
 						>
 							취소
 						</button>
@@ -375,6 +383,7 @@
 				</div>
 			</div>
 		</div>
+
 		<!-- 작업 로그가 없습니다 -->
 		<div
 			id="emptyMessage"
@@ -415,57 +424,39 @@
 							<input type="hidden" id="worklogId" name="id" />
 
 							<div class="modal-form-group">
-								<label class="modal-form-label" for="workDatetime"
-									>작업 시간</label
-								>
-								<input
-									type="text"
-									class="modal-form-input"
-									id="workDatetime"
-									name="workDatetime"
-									required
-								/>
+								<label class="modal-form-label" for="workDatetime">작업 시간</label>
+								<input type="text" class="modal-form-input" id="workDatetime" name="workDatetime" required />
 							</div>
 
 							<div class="modal-form-group">
 								<label class="modal-form-label" for="carModel">대상 차종</label>
-								<select
-									class="modal-form-input"
-									id="carModel"
-									name="carModel"
-									required
-								>
+								<select class="modal-form-input" id="carModel" name="carModel" required>
 									<option value="">선택하세요</option>
-									<option value="MX5">MX5a-분리</option>
-									<option value="XS4">AR1 조립</option>
-									<option value="Dd">ON SUB</option>
-									<option value="DDd">ON 조립</option>
+									<option value="MX5a-분리">MX5a-분리</option>
+									<option value="AR1 조립">AR1 조립</option>
+									<option value="ON SUB">ON SUB</option>
+									<option value="ON 조립">ON 조립</option>
 								</select>
 							</div>
 
 							<div class="modal-form-group">
-								<label class="modal-form-label" for="materialCode"
-									>자재 정보</label
-								>
-								<input
-									type="text"
-									class="modal-form-input"
-									id="materialCode"
-									name="materialCode"
-									required
-								/>
+								<label class="modal-form-label" for="productColor">제품 색상</label>
+								<input type="text" class="modal-form-input" id="productColor" name="productColor" required />
+							</div>
+
+							<div class="modal-form-group">
+								<label class="modal-form-label" for="productCode">제품 코드</label>
+								<input type="text" class="modal-form-input" id="productCode" name="productCode" required />
+							</div>
+
+							<div class="modal-form-group">
+								<label class="modal-form-label" for="productName">제품명</label>
+								<input type="text" class="modal-form-input" id="productName" name="productName" required />
 							</div>
 
 							<div class="modal-form-group">
 								<label class="modal-form-label" for="quantity">수량</label>
-								<input
-									type="number"
-									class="modal-form-input"
-									id="quantity"
-									name="quantity"
-									min="1"
-									required
-								/>
+								<input type="number" class="modal-form-input" id="quantity" name="quantity" min="1" required />
 							</div>
 						</form>
 					</div>
@@ -576,83 +567,163 @@
 					});
 
 				// 테이블 행 클릭 처리 (수정 모달)
+// 테이블 행 클릭 처리 (수정 모달)
 				document
-					.getElementById('workLogTableBody')
-					.addEventListener('click', function (e) {
-						// 체크박스 클릭은 무시
-						if (e.target.type === 'checkbox') return;
+				.getElementById('workLogTableBody')
+				.addEventListener('click', function (e) {
+					// 체크박스 클릭은 무시
+					if (e.target.type === 'checkbox') return;
 
-						const row = e.target.closest('tr');
-						if (row) {
-							editMode = true;
-							const cells = row.cells;
-							const id = row.dataset.id;
+					const row = e.target.closest('tr');
+					if (row) {
+						editMode = true;
+						const cells = row.cells;
+						const id = row.dataset.id;
 
-							document.getElementById('worklogModalLabel').textContent =
-								'작업 내역 수정';
-							document.getElementById('worklogId').value = id;
-							document.getElementById('workDatetime').value =
-								cells[1].textContent.trim();
-							document.getElementById('carModel').value =
-								cells[2].textContent.trim();
-							document.getElementById('materialCode').value =
-								cells[3].textContent.trim();
-							document.getElementById('quantity').value =
-								cells[4].textContent.trim();
+						document.getElementById('worklogModalLabel').textContent = '작업 내역 수정';
+						document.getElementById('worklogId').value = id;
+						document.getElementById('workDatetime').value = cells[1].textContent.trim();
+						document.getElementById('carModel').value = cells[2].textContent.trim();
+						document.getElementById('productColor').value = cells[3].textContent.trim();
+						document.getElementById('productCode').value = cells[4].textContent.trim();
+						document.getElementById('productName').value = cells[5].textContent.trim();
+						document.getElementById('quantity').value = cells[6].textContent.trim();
 
-							worklogModal.show();
-						}
-					});
+						worklogModal.show();
+					}
+				});
 
-				// 작업 내역 폼 제출 처리
+// 작업 내역 폼 제출 처리
 				document
-					.getElementById('btnSubmitWorklog')
-					.addEventListener('click', function () {
-						const form = document.getElementById('worklogForm');
-						if (!form.checkValidity()) {
-							form.reportValidity();
-							return;
-						}
+				.getElementById('btnSubmitWorklog')
+				.addEventListener('click', function () {
+					const form = document.getElementById('worklogForm');
+					if (!form.checkValidity()) {
+						form.reportValidity();
+						return;
+					}
 
-						const id = document.getElementById('worklogId').value;
-						const workDatetime = document.getElementById('workDatetime').value;
-						const carModel = document.getElementById('carModel').value;
-						const materialCode = document.getElementById('materialCode').value;
-						const quantity = document.getElementById('quantity').value;
+					const id = document.getElementById('worklogId').value;
+					const workDatetime = document.getElementById('workDatetime').value;
+					const carModel = document.getElementById('carModel').value;
+					const productColor = document.getElementById('productColor').value;
+					const productCode = document.getElementById('productCode').value;
+					const productName = document.getElementById('productName').value;
+					const quantity = document.getElementById('quantity').value;
 
-						// 실제 API 호출 대신 더미 데이터 업데이트
-						if (editMode) {
-							// 수정 로직
-							// TODO :: 바뀐 내용 없으면 수정 불가 기능
-							updateDummyData(
+					// 실제 API 호출 대신 더미 데이터 업데이트
+					if (editMode) {
+						// 수정 로직
+						updateDummyData(
 								id,
 								workDatetime,
 								carModel,
-								materialCode,
+								productColor,
+								productCode,
+								productName,
 								quantity
-							);
-							showToast('작업 내역이 수정되었습니다.', 'success');
-						} else {
-							// 생성 로직
-							addDummyData(workDatetime, carModel, materialCode, quantity);
-							showToast('작업 내역이 생성되었습니다.', 'info');
-						}
+						);
+						showToast('작업 내역이 수정되었습니다.', 'success');
+					} else {
+						// 생성 로직
+						addDummyData(
+								workDatetime,
+								carModel,
+								productColor,
+								productCode,
+								productName,
+								quantity
+						);
+						showToast('작업 내역이 생성되었습니다.', 'info');
+					}
 
-						worklogModal.hide();
-					});
+					worklogModal.hide();
+				});
 
-				// 업로드 제출 처리
+// 업로드 제출 처리
 				document
-					.getElementById('btnSubmitUpload')
-					.addEventListener('click', function () {
-						const fileInput = document.getElementById('file');
-						if (fileInput.files.length > 0) {
-							showToast('파일이 업로드되었습니다.', 'success');
-							uploadModal.hide();
-						} else {
-							showToast('업로드할 파일을 선택해주세요.', 'warning');
+				.getElementById('btnSubmitUpload')
+				.addEventListener('click', function () {
+					const fileInput = document.getElementById('file');
+					const carModelSelect = document.getElementById('carModelSelect');
+
+					if (fileInput.files.length === 0) {
+						showToast('업로드할 파일을 선택해주세요.', 'warning');
+						return;
+					}
+
+					if (!carModelSelect.value) {
+						showToast('차종을 선택해주세요.', 'warning');
+						return;
+					}
+
+					// 폼 데이터 생성
+					const formData = new FormData();
+					formData.append('file', fileInput.files[0]);
+					formData.append('carModel', carModelSelect.value);
+
+					// 로딩 표시 시작
+					showToast('파일을 업로드 중입니다...', 'info');
+
+					// 로딩 표시
+					const loadingToast = showToast('파일을 업로드 중입니다...', 'info', 10000); // 10초 타임아웃
+
+					// 파일 업로드 API 호출
+					fetch('/excel/upload', {
+						method: 'POST',
+						body: formData
+					})
+					.then(response => {
+						if (!response.ok) {
+							throw new Error('서버 응답 오류: ' + response.status);
 						}
+
+						// 리다이렉트 응답이면 페이지 새로고침
+						if (response.redirected) {
+							window.location.href = response.url;
+							return null;
+						}
+
+						return response.json();
+					})
+					.then(data => {
+						if (data) {
+							if (data.success) {
+								showToast(data.message || '파일이 성공적으로 업로드되었습니다.', 'success');
+								// 테이블 데이터 새로고침
+								refreshWorkLogTable();
+							} else {
+								showToast(data.message || '업로드 중 오류가 발생했습니다.', 'error');
+							}
+						}
+						uploadModal.hide();
+					})
+					.catch(error => {
+						console.error('업로드 오류:', error);
+						showToast('서버 요청 중 오류가 발생했습니다: ' + error.message, 'error');
 					});
+				});
+
+// 작업 로그 테이블 새로고침 함수
+				function refreshWorkLogTable() {
+					// 이 부분은 현재 구현된 테이블 데이터 로드 방식에 따라 조정
+					// 현재 더미 데이터를 사용 중이므로 실제 API 호출로 교체해야 함
+
+					// 예시: API 호출로 데이터 가져오기
+					fetch('/api/worklogs')
+					.then(response => response.json())
+					.then(data => {
+						if (data && data.workLogs) {
+							// 테이블 렌더링 함수 호출 (기존 renderDummyData 함수를 활용)
+							renderDummyData(data.workLogs);
+						}
+					})
+					.catch(error => {
+						console.error('데이터 로드 오류:', error);
+						showToast('데이터 로드 중 오류가 발생했습니다.', 'error');
+					});
+
+				};
 
 				// 전체 선택 체크박스
 				document
@@ -721,10 +792,12 @@
 				});
 
 				// 더미 데이터 생성 함수
+// 더미 데이터 생성 함수
 				function generateDummyData(count) {
 					const data = [];
 					const carModels = ['MX5a-분리', 'AR1 조립', 'ON SUB', 'ON 조립'];
-					const materialCodes = [
+					const productColors = ['RED', 'BLUE', 'BLACK', 'WHITE', 'SILVER'];
+					const productCodes = [
 						'82650R6400PE2',
 						'62510Q5000',
 						'86350H1000',
@@ -734,6 +807,17 @@
 						'86150R6000',
 						'64400Q7000',
 						'85790Q7100',
+					];
+					const productNames = [
+						'프론트 범퍼',
+						'라디에이터 서포트',
+						'사이드 미러',
+						'트렁크 힌지',
+						'리어 범퍼',
+						'헤드라이트 어셈블리',
+						'와이퍼 어셈블리',
+						'콘솔 어셈블리',
+						'기어 노브',
 					];
 
 					for (let i = 1; i <= count; i++) {
@@ -748,12 +832,15 @@
 								createdAt.getHours() + Math.floor(Math.random() * 5)
 						);
 
+						const codeIndex = Math.floor(Math.random() * productCodes.length);
+
 						data.push({
 							id: i,
 							workDatetime: formatDateTime(workDate),
 							carModel: carModels[Math.floor(Math.random() * carModels.length)],
-							materialCode:
-									materialCodes[Math.floor(Math.random() * materialCodes.length)],
+							productColor: productColors[Math.floor(Math.random() * productColors.length)],
+							productCode: productCodes[codeIndex],
+							productName: productNames[codeIndex],
 							quantity: Math.floor(Math.random() * 50) + 1,
 							createdAt: formatDateTime(createdAt),
 						});
@@ -767,19 +854,7 @@
 					const tableBody = document.getElementById('workLogTableBody');
 					tableBody.innerHTML = '';
 
-					// 더미 데이터가 없을 경우 (1:: 테이블에 메시지 출력)
-					// if (data.length === 0) {
-					// 	const row = document.createElement('tr');
-					// 	const cell = document.createElement('td');
-					// 	cell.colSpan = 6; // 열 전체를 차지하도록
-					// 	cell.textContent = '작업 로그가 없습니다';
-					// 	cell.style.textAlign = 'center';
-					// 	row.appendChild(cell);
-					// 	tableBody.appendChild(row);
-					// 	return;
-					// }
-
-					// 더미 데이터가 없을 경우 (2:: 테이블 숨기고 메시지 출력)
+					// 더미 데이터가 없을 경우
 					const tableResponsive = document.querySelector('.table-responsive');
 					const emptyMessage = document.getElementById('emptyMessage');
 
@@ -821,10 +896,20 @@
 						carModelCell.textContent = workLog.carModel;
 						row.appendChild(carModelCell);
 
-						// 자재 셀
-						const materialCodeCell = document.createElement('td');
-						materialCodeCell.textContent = workLog.materialCode;
-						row.appendChild(materialCodeCell);
+						// 색상 셀 (새로 추가)
+						const colorCell = document.createElement('td');
+						colorCell.textContent = workLog.productColor || '';
+						row.appendChild(colorCell);
+
+						// 제품 코드 셀 (새로 추가)
+						const productCodeCell = document.createElement('td');
+						productCodeCell.textContent = workLog.productCode || '';
+						row.appendChild(productCodeCell);
+
+						// 제품명 셀 (새로 추가)
+						const productNameCell = document.createElement('td');
+						productNameCell.textContent = workLog.productName || '';
+						row.appendChild(productNameCell);
 
 						// 수량 셀
 						const quantityCell = document.createElement('td');
@@ -851,17 +936,21 @@
 
 				// 더미 데이터 업데이트 함수 (수정)
 				function updateDummyData(
-					id,
-					workDatetime,
-					carModel,
-					materialCode,
-					quantity
+						id,
+						workDatetime,
+						carModel,
+						productColor,
+						productCode,
+						productName,
+						quantity
 				) {
 					const index = dummyData.findIndex((item) => item.id == id);
 					if (index !== -1) {
 						dummyData[index].workDatetime = workDatetime;
 						dummyData[index].carModel = carModel;
-						dummyData[index].materialCode = materialCode;
+						dummyData[index].productColor = productColor;
+						dummyData[index].productCode = productCode;
+						dummyData[index].productName = productName;
 						dummyData[index].quantity = quantity;
 
 						// 화면 갱신
@@ -869,19 +958,28 @@
 					}
 				}
 
-				// 더미 데이터 추가 함수 (생성)
-				function addDummyData(workDatetime, carModel, materialCode, quantity) {
+// 더미 데이터 추가 함수 (생성)
+				function addDummyData(
+						workDatetime,
+						carModel,
+						productColor,
+						productCode,
+						productName,
+						quantity
+				) {
 					const newId =
-						dummyData.length > 0
-							? Math.max(...dummyData.map((item) => item.id)) + 1
-							: 1;
+							dummyData.length > 0
+									? Math.max(...dummyData.map((item) => item.id)) + 1
+									: 1;
 					const now = formatDateTime(new Date());
 
 					dummyData.unshift({
 						id: newId,
 						workDatetime: workDatetime,
 						carModel: carModel,
-						materialCode: materialCode,
+						productColor: productColor,
+						productCode: productCode,
+						productName: productName,
 						quantity: quantity,
 						createdAt: now,
 					});
@@ -954,5 +1052,6 @@
 		// 	TODO: enter 키 확인, esc 끄기 버튼 기능 구현
 		</script>
 	</body>
+</html>
 </html>
 

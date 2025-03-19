@@ -162,6 +162,30 @@ const WorkLogApi = {
     return response.json();
   },
 
+
+  // TODO: 실제 upload API 구현 필요
+  /*
+  fetch('/api/excel/upload', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast(data.message, 'success');
+      uploadModal.hide();
+      // 데이터 다시 로드
+      loadWorkLogData();
+    } else {
+      showToast(data.message || '업로드 중 오류가 발생했습니다.', 'error');
+    }
+  })
+  .catch(error => {
+    showToast('서버 요청 중 오류가 발생했습니다.', 'error');
+    console.error(error);
+  });
+  */
+
   /**
    * 작업 로그 통계 데이터 조회
    * @param {Object} params - 쿼리 매개변수

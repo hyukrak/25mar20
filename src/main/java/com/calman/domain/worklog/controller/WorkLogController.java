@@ -6,9 +6,11 @@ import com.calman.domain.worklog.dto.WorkLogDTO.DetailResponse;
 import com.calman.domain.worklog.service.WorkLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
@@ -23,6 +25,16 @@ import java.util.Map;
 public class WorkLogController {
 
   private final WorkLogService workLogService;
+  private final ExcelUploadController excelUploadController;
+
+  /**
+   * 작업 로그 대시보드 페이지
+   */
+  @GetMapping("/")
+  public String dashboard(Model model) {
+    // 여기에 대시보드에 필요한 데이터를 추가
+    return "worklogs";
+  }
 
   /**
    * 작업 로그 목록 페이지
@@ -58,7 +70,7 @@ public class WorkLogController {
     model.addAttribute("sortField", sortField);
     model.addAttribute("sortDirection", sortDirection);
 
-    return "worklogs/list";
+    return "worklogs";
   }
 
   /**
@@ -150,11 +162,28 @@ public class WorkLogController {
   }
 
   /**
-   * 작업 로그 대시보드 페이지
+   * 엑셀 파일 업로드 처리
    */
-  @GetMapping("/")
-  public String dashboard(Model model) {
-    // 여기에 대시보드에 필요한 데이터를 추가
-    return "worklogs";
+  @PostMapping("/upload")
+  public String uploadExcelFile(
+      @RequestParam("file") MultipartFile file,
+      @RequestParam("carModel") String carModel,
+      RedirectAttributes redirectAttributes) {
+
+    // ExcelUploadController의 엔드포인트 호출
+    ResponseEntity<Map<String, Object>> response = excelUploadController.uploadExcel(file, carModel);
+    Map<String, Object> result = response.getBody();
+
+    if (result != null) {
+      if ((Boolean) result.getOrDefault("success", false)) {
+        redirectAttributes.addFlashAttribute("successMessage", result.get("message"));
+      } else {
+        redirectAttributes.addFlashAttribute("errorMessage", result.get("message"));
+      }
+    } else {
+      redirectAttributes.addFlashAttribute("errorMessage", "파일 처리 중 오류가 발생했습니다.");
+    }
+
+    return "redirect:/worklogs";
   }
 }
