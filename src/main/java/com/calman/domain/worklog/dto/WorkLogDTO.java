@@ -15,7 +15,9 @@ public class WorkLogDTO {
   private Long id;
   private LocalDateTime workDatetime;
   private String carModel;
-  private String materialCode;
+  private String productColor;
+  private String productCode;
+  private String productName;
   private Integer quantity;
   private LocalDateTime createdAt;
 
@@ -27,7 +29,9 @@ public class WorkLogDTO {
 
     private LocalDateTime workDatetime;
     private String carModel;
-    private String materialCode;
+    private String productColor;
+    private String productCode;
+    private String productName;
     private Integer quantity;
   }
 
@@ -39,7 +43,9 @@ public class WorkLogDTO {
 
     private LocalDateTime workDatetime;
     private String carModel;
-    private String materialCode;
+    private String productColor;
+    private String productCode;
+    private String productName;
     private Integer quantity;
   }
 
@@ -52,7 +58,9 @@ public class WorkLogDTO {
     private Long id;
     private LocalDateTime workDatetime;
     private String carModel;
-    private String materialCode;
+    private String productColor;
+    private String productCode;
+    private String productName;
     private Integer quantity;
   }
 
@@ -67,14 +75,10 @@ public class WorkLogDTO {
     private Long id;                     // 고유 ID
     private LocalDateTime workDatetime;  // 작업 일시
     private String carModel;             // 차량 모델
-    private String materialCode;         // 자재 코드
+    private String productColor;         // 제품 색상
+    private String productCode;          // 제품 코드
+    private String productName;          // 제품 이름
     private Integer quantity;            // 수량
     private LocalDateTime createdAt;     // 생성 일시
-//  private Long userId;                 // 작업자 ID
-//  private String status;               // 상태
-//  private String notes;                // 추가 메모
-//  private Long departmentId;           // 부서 ID
-//  private Long lineId;                 // 라인 ID
-//  private String lotNumber;            // 로트 번호
   }
 }

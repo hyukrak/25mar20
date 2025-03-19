@@ -30,7 +30,7 @@ public class WorkLogController {
   @GetMapping
   public String listWorkLogs(
       @RequestParam(required = false) String carModel,
-      @RequestParam(required = false) String materialCode,
+      @RequestParam(required = false) String productCode,
       @RequestParam(required = false) String status,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
@@ -41,7 +41,7 @@ public class WorkLogController {
       Model model
   ) {
     Map<String, Object> result = workLogService.getWorkLogs(
-        carModel, materialCode, status, startDate, endDate,
+        carModel, productCode, status, startDate, endDate,
         page, size, sortField, sortDirection
     );
     model.addAttribute("workLogs", result.get("workLogs"));
@@ -51,7 +51,7 @@ public class WorkLogController {
 
     // 상태 유지를 위해 필터 매개변수를 모델에 추가
     model.addAttribute("carModel", carModel);
-    model.addAttribute("materialCode", materialCode);
+    model.addAttribute("productCode", productCode);
     model.addAttribute("status", status);
     model.addAttribute("startDate", startDate);
     model.addAttribute("endDate", endDate);
@@ -107,7 +107,9 @@ public class WorkLogController {
     WorkLogDTO.UpdateRequest updateRequest = new WorkLogDTO.UpdateRequest();
     updateRequest.setWorkDatetime(workLog.getWorkDatetime());
     updateRequest.setCarModel(workLog.getCarModel());
-    updateRequest.setMaterialCode(workLog.getMaterialCode());
+    updateRequest.setProductColor(workLog.getProductColor());
+    updateRequest.setProductCode(workLog.getProductCode());
+    updateRequest.setProductName(workLog.getProductName());
     updateRequest.setQuantity(workLog.getQuantity());
 
     model.addAttribute("workLog", updateRequest);

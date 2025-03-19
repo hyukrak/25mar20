@@ -436,10 +436,10 @@
 									required
 								>
 									<option value="">선택하세요</option>
-									<option value="MX5">MX5</option>
-									<option value="XS4">XS4</option>
-									<option value="Dd">Dd</option>
-									<option value="DDd">DDd</option>
+									<option value="MX5">MX5a-분리</option>
+									<option value="XS4">AR1 조립</option>
+									<option value="Dd">ON SUB</option>
+									<option value="DDd">ON 조립</option>
 								</select>
 							</div>
 
@@ -723,7 +723,7 @@
 				// 더미 데이터 생성 함수
 				function generateDummyData(count) {
 					const data = [];
-					const carModels = ['MX5', 'XS4', 'Dd', 'DDd'];
+					const carModels = ['MX5a-분리', 'AR1 조립', 'ON SUB', 'ON 조립'];
 					const materialCodes = [
 						'82650R6400PE2',
 						'62510Q5000',
@@ -745,7 +745,7 @@
 						const workDate = new Date(date);
 						const createdAt = new Date(date);
 						createdAt.setHours(
-							createdAt.getHours() + Math.floor(Math.random() * 5)
+								createdAt.getHours() + Math.floor(Math.random() * 5)
 						);
 
 						data.push({
@@ -753,7 +753,7 @@
 							workDatetime: formatDateTime(workDate),
 							carModel: carModels[Math.floor(Math.random() * carModels.length)],
 							materialCode:
-								materialCodes[Math.floor(Math.random() * materialCodes.length)],
+									materialCodes[Math.floor(Math.random() * materialCodes.length)],
 							quantity: Math.floor(Math.random() * 50) + 1,
 							createdAt: formatDateTime(createdAt),
 						});

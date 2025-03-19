@@ -30,7 +30,9 @@ public class WorkLogService {
     WorkLogDTO workLog = WorkLogDTO.builder()
         .workDatetime(request.getWorkDatetime())
         .carModel(request.getCarModel())
-        .materialCode(request.getMaterialCode())
+        .productColor(request.getProductColor())
+        .productCode(request.getProductCode())
+        .productName(request.getProductName())
         .quantity(request.getQuantity() != null ? request.getQuantity() : 1)
         .build();
 
@@ -62,28 +64,29 @@ public class WorkLogService {
         workLog.getId(),
         workLog.getWorkDatetime(),
         workLog.getCarModel(),
-        workLog.getMaterialCode(),
+        workLog.getProductColor(),
+        workLog.getProductCode(),
+        workLog.getProductName(),
         workLog.getQuantity(),
         workLog.getCreatedAt()
     );
   }
 
+
   /**
-   * 필터링 및 페이징으로 작업 로그 목록 조회
+   * 필터링으로 작업 로그 목록 조회 (페이징 제거)
    * @param carModel 차량 모델 필터
-   * @param materialCode 자재 코드 필터
+   * @param productCode 제품 코드 필터
    * @param status 상태 필터
    * @param startDate 시작 날짜 필터
    * @param endDate 종료 날짜 필터
-   * @param pageNumber 페이지 번호
-   * @param pageSize 페이지 크기
    * @param sortField 정렬 필드
    * @param sortDirection 정렬 방향
-   * @return 작업 로그 목록 및 페이징 정보
+   * @return 작업 로그 목록
    */
   public Map<String, Object> getWorkLogs(
       String carModel,
-      String materialCode,
+      String productCode,
       String status,
       LocalDateTime startDate,
       LocalDateTime endDate,
@@ -94,23 +97,19 @@ public class WorkLogService {
 
     Map<String, Object> params = new HashMap<>();
     params.put("carModel", carModel);
-    params.put("materialCode", materialCode);
+    params.put("productCode", productCode);
     params.put("status", status);
     params.put("startDate", startDate);
     params.put("endDate", endDate);
-    params.put("pageNumber", pageNumber != null ? pageNumber : 1);
-    params.put("pageSize", pageSize != null ? pageSize : 10);
     params.put("sortField", sortField);
     params.put("sortDirection", sortDirection != null ? sortDirection : "DESC");
 
     List<WorkLogDTO> workLogs = workLogMapper.selectWorkLogs(params);
-    int totalCount = workLogMapper.countWorkLogs(params);
+    int totalCount = workLogs.size();
 
     Map<String, Object> result = new HashMap<>();
     result.put("workLogs", workLogs);
     result.put("totalCount", totalCount);
-    result.put("totalPages", (int) Math.ceil((double) totalCount / (pageSize != null ? pageSize : 10)));
-    result.put("currentPage", pageNumber != null ? pageNumber : 1);
 
     return result;
   }
@@ -131,7 +130,9 @@ public class WorkLogService {
     // 필드 업데이트
     existingWorkLog.setWorkDatetime(request.getWorkDatetime());
     existingWorkLog.setCarModel(request.getCarModel());
-    existingWorkLog.setMaterialCode(request.getMaterialCode());
+    existingWorkLog.setProductColor(request.getProductColor());
+    existingWorkLog.setProductCode(request.getProductCode());
+    existingWorkLog.setProductName(request.getProductName());
     existingWorkLog.setQuantity(request.getQuantity());
 
     return workLogMapper.updateWorkLog(existingWorkLog) > 0;
@@ -167,12 +168,12 @@ public class WorkLogService {
   }
 
   /**
-   * 자재 코드로 작업 로그 조회
-   * @param materialCode 자재 코드
+   * 제품 코드로 작업 로그 조회
+   * @param productCode 제품 코드
    * @return 작업 로그 목록
    */
-  public List<WorkLogDTO> getWorkLogsByMaterialCode(String materialCode) {
-    return workLogMapper.selectWorkLogsByMaterialCode(materialCode);
+  public List<WorkLogDTO> getWorkLogsByProductCode(String productCode) {
+    return workLogMapper.selectWorkLogsByProductCode(productCode);
   }
 
   /**

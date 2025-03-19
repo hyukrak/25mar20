@@ -29,7 +29,7 @@ public interface WorkLogMapper {
 
   /**
    * 페이징 및 필터링으로 작업 로그 목록 조회
-   * @param params 검색 조건 (carModel, materialCode, status, startDate, endDate, pageSize, pageNumber 등)
+   * @param params 검색 조건 (carModel, productCode, productColor, productName, status, startDate, endDate, pageSize, pageNumber 등)
    * @return 작업 로그 목록
    */
   List<WorkLogDTO> selectWorkLogs(Map<String, Object> params);
@@ -74,11 +74,11 @@ public interface WorkLogMapper {
   List<WorkLogDTO> selectWorkLogsByCarModel(@Param("carModel") String carModel);
 
   /**
-   * 자재 코드로 작업 로그 조회
-   * @param materialCode 자재 코드
+   * 제품 코드로 작업 로그 조회
+   * @param productCode 제품 코드
    * @return 작업 로그 목록
    */
-  List<WorkLogDTO> selectWorkLogsByMaterialCode(@Param("materialCode") String materialCode);
+  List<WorkLogDTO> selectWorkLogsByProductCode(@Param("productCode") String productCode);
 
   /**
    * 상태별 작업 로그 조회

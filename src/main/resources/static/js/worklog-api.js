@@ -124,14 +124,14 @@ const WorkLogApi = {
   },
 
   /**
-   * 자재 코드로 작업 로그 목록 조회
-   * @param {string} materialCode - 자재 코드
+   * 제품 코드로 작업 로그 목록 조회
+   * @param {string} productCode - 제품 코드
    * @returns {Promise<Array>} 작업 로그 목록
    */
-  getWorkLogsByMaterialCode: async (materialCode) => {
-    const response = await fetch(`/api/worklogs/by-material-code/${encodeURIComponent(materialCode)}`);
+  getWorkLogsByProductCode: async (productCode) => {
+    const response = await fetch(`/api/worklogs/by-product-code/${encodeURIComponent(productCode)}`);
     if (!response.ok) {
-      throw new Error(`자재 코드로 작업 로그 조회 실패: ${response.statusText}`);
+      throw new Error(`제품 코드로 작업 로그 조회 실패: ${response.statusText}`);
     }
     return response.json();
   },

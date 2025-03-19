@@ -7,7 +7,7 @@ spring:
     driver-class-name: org.sqlite.JDBC
   sql:
     init:
-      mode: embedded
+      mode: always
       schema-locations: classpath:schema/worklogs.sql
   thymeleaf:
     prefix: classpath:/templates/

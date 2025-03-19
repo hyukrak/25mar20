@@ -1,3 +1,4 @@
+
 -- 작업 로그 테이블용 더미 데이터 5개
 INSERT INTO work_logs (
     wl_work_datetime,
