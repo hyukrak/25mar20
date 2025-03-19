@@ -2,8 +2,10 @@ package com.calman.domain.worklog.controller;
 
 import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.service.WorkLogService;
+import java.text.SimpleDateFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.formula.functions.DateValue;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -96,11 +98,11 @@ public class ExcelUploadController {
       // 월일 정보를 3번째 시트의 L6 셀에서 가져옴
       Row headerRow = productNameSheet.getRow(5); // 6번째 행 (인덱스 5)
       Cell monthDayCell = headerRow != null ? headerRow.getCell(11) : null; // L열 (인덱스 11)
-      String dateStr = monthDayCell != null ? getCellValueAsString(monthDayCell).trim() : "";
+      Date evaluatedDate = DateUtil.getJavaDate(monthDayCell.getNumericCellValue());
 
       // 날짜 형식 확인 및 변환
-      dateStr = convertToFormattedDate(dateStr);
-      log.info("날짜 기준: {}", dateStr);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yy.MM.dd");   // 포맷 지정
+        String formattedDate = simpleDateFormat.format(evaluatedDate);     //
 
       // 가장 이른 시간부터 처리하기 위해 시간 기준으로 정렬
       List<RowTimeInfo> rowTimeInfoList = new ArrayList<>();
@@ -116,6 +118,12 @@ public class ExcelUploadController {
         Cell timeCell = row.getCell(DATETIME_COL); // C열
         Cell colorCell = row.getCell(COLOR_COL); // B열
 
+        // FormulaEvaluator 생성
+        FormulaEvaluator formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
+
+        // 셀 값 평가
+        CellValue evalueatedCell = formulaEvaluator.evaluate(timeCell);
+
         // 시작 시간이나 색상이 비어 있으면 더 이상 처리하지 않음
         boolean timeEmpty = (timeCell == null || timeCell.getCellType() == CellType.BLANK);
         boolean colorEmpty = (colorCell == null || colorCell.getCellType() == CellType.BLANK);
@@ -126,7 +134,7 @@ public class ExcelUploadController {
           break;
         }
 
-        String timeStr = getCellValueAsString(timeCell).trim();
+        String timeStr = getCellValueAsString(timeCell).trim().substring(11);     // 1899-12-31T09:34 에서 11번째 문자부터 자르기
         rowTimeInfoList.add(new RowTimeInfo(rowIdx, timeStr));
       }
 
@@ -151,7 +159,7 @@ public class ExcelUploadController {
         Cell productNameCell = productNameRow != null ? productNameRow.getCell(PRODUCT_NAME_COL) : null; // E열
 
         // 작업시간 문자열 생성 (yy.MM.dd HH:mm 형식)
-        String workDatetimeStr = dateStr + " " + timeStr;
+        String workDatetimeStr = formattedDate + " " + timeStr;
 
         // 수량 찾기: I열부터 GJ열까지 확인
         for (int colIdx = QUANTITY_START_COL; colIdx <= QUANTITY_END_COL; colIdx++) {
@@ -244,21 +252,6 @@ public class ExcelUploadController {
       result.put("message", "파일 처리 중 오류가 발생했습니다: " + e.getMessage());
       return ResponseEntity.status(500).body(result);
     }
-  }
-
-  /**
-   * 날짜 문자열을 yy.MM.dd 형식으로 변환
-   */
-  private String convertToFormattedDate(String dateStr) {
-    if (dateStr == null || dateStr.trim().isEmpty()) {
-      // 현재 날짜를 기본값으로 사용
-      LocalDateTime now = LocalDateTime.now();
-      return String.format("%02d.%02d.%02d",
-          now.getYear() % 100, now.getMonthValue(), now.getDayOfMonth());
-    }
-
-    // yy/MM/dd 형식을 yy.MM.dd 형식으로 변환
-    return dateStr.replace("/", ".");
   }
 
   /**
