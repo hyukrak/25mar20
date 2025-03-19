@@ -1,26 +1,18 @@
 /* 작업시간 상태별 스타일 */
-.status-danger {
-  color: var(--status-danger) !important;
-  font-weight: 600 !important;
-}
-
-.status-warning {
-  color: var(--status-warning) !important;
-  font-weight: 600 !important;
-}
-
-.status-caution {
-  color: var(--status-caution) !important;
-  font-weight: 600 !important;
-}
-
 .status-normal {
   color: var(--status-normal) !important;
 }
 
 .status-passed {
   color: var(--status-passed) !important;
-}/**
+}
+
+/* 지난 작업 row의 모든 셀에 적용될 스타일 */
+.passed-task td {
+  color: var(--status-passed) !important;
+}
+
+/**
  * components.css - 작업 로그 시스템 컴포넌트 스타일
  * 버튼, 테이블 등의 UI 컴포넌트 스타일을 정의합니다.
  */

@@ -14,7 +14,7 @@
   --status-warning: #ff9500;
   --status-caution: #ffcc00;
   --status-normal: #000000;
-  --status-passed: #8e8e93;
+  --status-passed: #bebbbb;
 }
 
 body {

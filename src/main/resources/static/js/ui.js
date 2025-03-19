@@ -75,25 +75,11 @@ const UI = {
         }
 
         if (workDate) {
-          // 이미 지난 작업
           if (workDate < now) {
-            workDatetimeCell.classList.add('status-passed');
+            workDatetimeCell.classList.add('status-passed');  // 지난 작업
             row.classList.add('passed-task');
           } else {
-            // 남은 시간 계산 (밀리초)
-            const timeLeft = workDate.getTime() - now.getTime();
-            const hoursLeft = timeLeft / (1000 * 60 * 60);
-
-            // 상태에 따른 클래스 추가
-            if (hoursLeft <= 1) { // 1시간 이내
-              workDatetimeCell.classList.add('status-danger');
-            } else if (hoursLeft <= 3) { // 3시간 이내
-              workDatetimeCell.classList.add('status-warning');
-            } else if (hoursLeft <= 6) { // 6시간 이내
-              workDatetimeCell.classList.add('status-caution');
-            } else {
-              workDatetimeCell.classList.add('status-normal');
-            }
+            workDatetimeCell.classList.add('status-normal');  // 남은 작업
           }
         }
 
