@@ -126,7 +126,22 @@ const UI = {
 
         // 생성일 셀
         const createdAtCell = document.createElement('td');
-        createdAtCell.textContent = workLog.createdAt;
+
+        // 날짜 포맷을 원하는 형식으로 변환
+        let formattedDate = new Intl.DateTimeFormat('ko-KR', {
+          year: '2-digit',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false, // 24시간제
+        }).format(new Date(workLog.createdAt));
+
+        // "25. 03. 20. 04:01" → "25.03.20 04:01"
+        formattedDate = formattedDate.replace(/\. /g, '.');                             // 1. 모든 ". "를 "."로 변경 → "25.03.20.04:01"
+        formattedDate = formattedDate.replace(/\.([0-9]{2}:[0-9]{2})$/, ' $1');         // 2. 마지막 점(.)을 공백으로 변경 → "25.03.20 04:01"
+
+        createdAtCell.textContent = formattedDate;
         row.appendChild(createdAtCell);
 
         tableBody.appendChild(row);
