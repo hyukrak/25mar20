@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,19 +70,19 @@ public class WorkLogService {
         workLog.getProductCode(),
         workLog.getProductName(),
         workLog.getQuantity(),
+        workLog.getCompletedAt(),
         workLog.getCreatedAt()
     );
   }
-
 
   /**
    * 필터링으로 작업 로그 목록 조회 (페이징 제거)
    * @param carModel 차량 모델 필터
    * @param productCode 제품 코드 필터
-   * @param status 상태 필터
+   * @param status 상태 필터 (completed, incomplete)
    * @param startDate 시작 날짜 필터
    * @param endDate 종료 날짜 필터
-   * @param sortField 정렬 필드
+   * @param sortField 정렬 필드 (wl_car_model, wl_product_color, wl_product_code만 허용)
    * @param sortDirection 정렬 방향
    * @return 작업 로그 목록
    */
@@ -90,10 +92,19 @@ public class WorkLogService {
       String status,
       LocalDateTime startDate,
       LocalDateTime endDate,
-      Integer pageNumber,
-      Integer pageSize,
       String sortField,
       String sortDirection) {
+
+    // 허용된 정렬 필드만 처리
+    if (sortField != null && !Arrays.asList(
+        "wl_car_model", "wl_product_color", "wl_product_code").contains(sortField)) {
+      sortField = "wl_work_datetime"; // 기본값
+    }
+
+    // 정렬 방향 기본값을 ASC로 설정
+    if (sortDirection == null) {
+      sortDirection = "ASC";
+    }
 
     Map<String, Object> params = new HashMap<>();
     params.put("carModel", carModel);
@@ -102,16 +113,28 @@ public class WorkLogService {
     params.put("startDate", startDate);
     params.put("endDate", endDate);
     params.put("sortField", sortField);
-    params.put("sortDirection", sortDirection != null ? sortDirection : "DESC");
+    params.put("sortDirection", sortDirection);
 
     List<WorkLogDTO> workLogs = workLogMapper.selectWorkLogs(params);
-    int totalCount = workLogs.size();
 
     Map<String, Object> result = new HashMap<>();
     result.put("workLogs", workLogs);
-    result.put("totalCount", totalCount);
+    result.put("totalCount", workLogs.size());
 
     return result;
+  }
+
+  /**
+   * 특정 날짜의 작업 로그 목록 조회
+   * @param date 조회할 날짜
+   * @return 해당 날짜의 작업 로그 목록
+   */
+  public Map<String, Object> getWorkLogsByExactDate(LocalDate date) {
+    // 해당 날짜의 시작과 끝
+    LocalDateTime startOfDay = date.atStartOfDay();
+    LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+    return getWorkLogs(null, null, null, startOfDay, endOfDay, "wl_work_datetime", "ASC");
   }
 
   /**
@@ -139,7 +162,19 @@ public class WorkLogService {
   }
 
   /**
-   * 작업 로그 삭제 (소프트 삭제)
+   * 작업 완료 상태 업데이트
+   * @param id 작업 로그 ID
+   * @param completed 완료 여부
+   * @return 성공 여부
+   */
+  @Transactional
+  public boolean updateWorkLogCompletionStatus(Long id, boolean completed) {
+    LocalDateTime completedAt = completed ? LocalDateTime.now() : null;
+    return workLogMapper.updateWorkLogCompletionStatus(id, completedAt) > 0;
+  }
+
+  /**
+   * 작업 로그 삭제
    * @param id 삭제할 작업 로그 ID
    * @return 성공 여부
    */
@@ -178,19 +213,10 @@ public class WorkLogService {
 
   /**
    * 상태별 작업 로그 조회
-   * @param status 상태
+   * @param status 상태 (completed, incomplete)
    * @return 작업 로그 목록
    */
   public List<WorkLogDTO> getWorkLogsByStatus(String status) {
     return workLogMapper.selectWorkLogsByStatus(status);
-  }
-
-  /**
-   * 작업자 ID로 작업 로그 조회
-   * @param userId 작업자 ID
-   * @return 작업 로그 목록
-   */
-  public List<WorkLogDTO> getWorkLogsByUserId(Long userId) {
-    return workLogMapper.selectWorkLogsByUserId(userId);
   }
 }

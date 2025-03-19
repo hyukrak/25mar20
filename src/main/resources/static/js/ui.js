@@ -3,6 +3,11 @@
  * UI 렌더링 및 업데이트 관련 함수들을 포함합니다.
  */
 
+// 전역 변수
+let currentSortField = 'wl_work_datetime';
+let currentSortDirection = 'ASC'; // 기본값을 'ASC'로 변경
+let currentStatus = null;
+
 // UI 네임스페이스 생성
 const UI = {
   /**
@@ -13,11 +18,14 @@ const UI = {
     const tableBody = document.getElementById('workLogTableBody');
     tableBody.innerHTML = '';
 
+    // 정렬 아이콘 초기화
+    this.updateSortIcons();
+
     // 데이터가 없을 경우
     const tableResponsive = document.querySelector('.table-responsive');
     const emptyMessage = document.getElementById('emptyMessage');
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       tableResponsive.style.display = 'none';
       emptyMessage.style.display = 'block';
     } else {
@@ -30,6 +38,11 @@ const UI = {
       data.forEach((workLog) => {
         const row = document.createElement('tr');
         row.dataset.id = workLog.id;
+
+        // 작업이 완료 상태인 경우 행 스타일 적용
+        if (workLog.completedAt) {
+          row.classList.add('status-completed');
+        }
 
         // 체크박스 셀
         const checkboxCell = document.createElement('td');
@@ -63,7 +76,7 @@ const UI = {
 
             if (dateParts.length === 3 && timeParts.length === 2) {
               // 20YY로 연도 변환 (2자리->4자리)
-              const year = parseInt(dateParts[0]) + 2000;
+              const year = parseInt(dateParts[0]) + 2000; // 25로 시작하면 2025년
               const month = parseInt(dateParts[1]) - 1; // JavaScript의 월은 0부터 시작
               const day = parseInt(dateParts[2]);
               const hour = parseInt(timeParts[0]);
@@ -74,8 +87,13 @@ const UI = {
           }
         }
 
+        // 작업일이 오늘이거나 과거인 경우 passed 스타일 적용
         if (workDate) {
-          if (workDate < now) {
+          // 시간 부분을 제외하고 날짜만 비교
+          const workDateOnly = new Date(workDate.getFullYear(), workDate.getMonth(), workDate.getDate());
+          const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+          if (workDateOnly <= nowDateOnly) {
             workDatetimeCell.classList.add('status-passed');  // 지난 작업
             row.classList.add('passed-task');
           } else {
@@ -130,6 +148,44 @@ const UI = {
         createdAtCell.textContent = formattedDate;
         row.appendChild(createdAtCell);
 
+        // 완료 상태 셀
+        const statusCell = document.createElement('td');
+        const statusIcon = document.createElement('div');
+        statusIcon.className = 'status-icon ' +
+            (workLog.completedAt ? 'status-complete-icon' : 'status-incomplete-icon');
+
+        // 완료/미완료 아이콘 설정
+        const iconElement = document.createElement('i');
+        if (workLog.completedAt) {
+          iconElement.className = 'bi bi-check-circle-fill';
+          iconElement.setAttribute('title', '완료');
+        } else {
+          iconElement.className = 'bi bi-x-circle';
+          iconElement.setAttribute('title', '미완료');
+        }
+
+        statusIcon.appendChild(iconElement);
+
+        // 완료 상태 토글 이벤트
+        statusIcon.addEventListener('click', function(e) {
+          e.stopPropagation(); // 행 클릭 이벤트 전파 방지
+          const isCompleted = workLog.completedAt !== null;
+
+          // API 호출하여 상태 토글
+          API.updateWorkLogStatus(workLog.id, !isCompleted)
+          .then(() => {
+            // 데이터 새로고침
+            API.fetchWorkLogsData();
+          })
+          .catch(error => {
+            console.error('상태 업데이트 오류:', error);
+            UI.showToast('상태 업데이트 중 오류가 발생했습니다.', 'error');
+          });
+        });
+
+        statusCell.appendChild(statusIcon);
+        row.appendChild(statusCell);
+
         tableBody.appendChild(row);
       });
     }
@@ -142,18 +198,103 @@ const UI = {
     // 전체 선택 체크박스 초기화
     document.getElementById('selectAll').checked = false;
     this.updateDeleteButton();
+
+    // 상태 필터 표시 업데이트
+    this.updateStatusFilterDisplay();
+  },
+
+  /**
+   * 상태 필터 표시 업데이트 함수
+   */
+  updateStatusFilterDisplay: function() {
+    // 모든 드롭다운 항목에서 active 클래스 제거
+    document.querySelectorAll('#statusDropdown .dropdown-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // 현재 상태에 맞는 항목에 active 클래스 추가
+    const activeItemSelector = currentStatus === null ?
+        '[data-status="all"]' :
+        `[data-status="${currentStatus}"]`;
+
+    const activeItem = document.querySelector(`#statusDropdown ${activeItemSelector}`);
+    if (activeItem) {
+      activeItem.classList.add('active');
+    }
   },
 
   /**
    * 날짜별 데이터 필터링 함수
-   * @param {string} dateStr - 필터링할 날짜 (YYYY-MM-DD 형식)
+   * @param {string} dateStr - 필터링할 날짜 (YY.MM.DD 형식)
    */
   filterDataByDate: function(dateStr) {
-    const filteredData = workLogData.filter((item) => {
-      return item.workDatetime.startsWith(dateStr);
-    });
+    // API 호출로 특정 날짜의 데이터 조회
+    API.fetchWorkLogsByDate(dateStr);
+  },
 
-    this.renderWorkLogData(filteredData);
+  /**
+   * 상태별 데이터 필터링 함수
+   * @param {string} status - 필터링할 상태 ('completed', 'incomplete', 'all')
+   */
+  filterDataByStatus: function(status) {
+    // 전역 상태 변수 업데이트
+    currentStatus = status === 'all' ? null : status;
+
+    // 상태 필터 표시 업데이트
+    this.updateStatusFilterDisplay();
+
+    // API 호출로 필터링된 데이터 조회
+    API.fetchFilteredWorkLogs(currentStatus, currentSortField, currentSortDirection);
+  },
+
+  /**
+   * 정렬 적용 함수
+   * @param {string} field - 정렬 필드
+   * @param {string} direction - 정렬 방향 ('ASC' 또는 'DESC')
+   */
+  applySorting: function(field, direction) {
+    // 전역 정렬 변수 업데이트
+    currentSortField = field;
+    currentSortDirection = direction;
+
+    // 정렬 헤더 업데이트
+    this.updateSortIcons();
+
+    // API 호출로 정렬된 데이터 조회
+    API.fetchFilteredWorkLogs(currentStatus, field, direction);
+  },
+
+  /**
+   * 정렬 아이콘 업데이트
+   */
+  updateSortIcons: function() {
+    // 모든 정렬 헤더 초기화
+    document.querySelectorAll('.sortable').forEach(header => {
+      const field = header.getAttribute('data-field');
+      const icon = header.querySelector('.sort-icon');
+
+      header.classList.remove('sort-active');
+      header.removeAttribute('data-direction');
+
+      // 현재 정렬 중인 필드인 경우
+      if (field === currentSortField) {
+        header.classList.add('sort-active');
+        header.setAttribute('data-direction', currentSortDirection);
+
+        // 아이콘 방향 설정
+        if (currentSortDirection === 'ASC') {
+          icon.classList.remove('bi-sort-down');
+          icon.classList.add('bi-sort-up');
+        } else {
+          icon.classList.remove('bi-sort-up');
+          icon.classList.add('bi-sort-down');
+        }
+      } else {
+        // 기본 아이콘으로 초기화
+        icon.classList.remove('bi-sort-up');
+        icon.classList.add('bi-sort-down');
+      }
+    });
   },
 
   /**

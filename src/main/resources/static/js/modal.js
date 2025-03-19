@@ -9,12 +9,28 @@ const Modal = {
   uploadModalInstance: null,
   worklogModalInstance: null,
 
+  // 완료 상태 토글 요소
+  completionStatusElement: null,
+  completionStatusTextElement: null,
+
   /**
    * 모달 인스턴스 초기화
    */
   init: function() {
     this.uploadModalInstance = new bootstrap.Modal(document.getElementById('uploadModal'));
     this.worklogModalInstance = new bootstrap.Modal(document.getElementById('worklogModal'));
+
+    // 완료 상태 토글 요소 참조
+    this.completionStatusElement = document.getElementById('completionStatus');
+    this.completionStatusTextElement = document.getElementById('completionStatusText');
+
+    // 완료 상태 토글 이벤트 리스너
+    if (this.completionStatusElement) {
+      this.completionStatusElement.addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.getElementById('completionStatusText').textContent = isChecked ? '완료' : '미완료';
+      });
+    }
   },
 
   /**
@@ -44,6 +60,20 @@ const Modal = {
     document.getElementById('worklogId').value = '';
     document.getElementById('worklogForm').reset();
 
+    // 기본 날짜와 시간 설정 (현재 날짜/시간)
+    const now = new Date();
+    const formattedDateTime = Utils.formatDateTime(now);
+    document.getElementById('workDatetime').value = formattedDateTime;
+
+    // 완료 상태 초기화 (생성 시에는 미완료 상태로 초기화)
+    if (this.completionStatusElement) {
+      this.completionStatusElement.checked = false;
+      this.completionStatusTextElement.textContent = '미완료';
+    }
+
+    // 완료 상태 필드 숨기기 (생성 시에는 상태 변경을 허용하지 않음)
+    document.getElementById('completionStatusContainer').style.display = 'none';
+
     this.worklogModalInstance.show();
   },
 
@@ -60,6 +90,9 @@ const Modal = {
     const cells = row.cells;
     const id = row.dataset.id;
 
+    // 완료 상태 확인 (row 클래스에서 status-completed가 있는지 확인)
+    const isCompleted = row.classList.contains('status-completed');
+
     document.getElementById('worklogModalLabel').textContent = '작업 내역 수정';
     document.getElementById('worklogId').value = id;
     document.getElementById('workDatetime').value = cells[1].textContent.trim();
@@ -68,6 +101,15 @@ const Modal = {
     document.getElementById('productCode').value = cells[4].textContent.trim();
     document.getElementById('productName').value = cells[5].textContent.trim();
     document.getElementById('quantity').value = cells[6].textContent.trim();
+
+    // 완료 상태 설정
+    if (this.completionStatusElement) {
+      this.completionStatusElement.checked = isCompleted;
+      this.completionStatusTextElement.textContent = isCompleted ? '완료' : '미완료';
+    }
+
+    // 완료 상태 필드 표시 (수정 시에는 상태 변경 허용)
+    document.getElementById('completionStatusContainer').style.display = 'block';
 
     this.worklogModalInstance.show();
   },
@@ -82,9 +124,26 @@ const Modal = {
       return;
     }
 
+    // 입력값 유효성 검사
+    let workDatetime = document.getElementById('workDatetime').value.trim();
+
+    // YY.MM.DD HH:MM 형식인지 확인
+    // 만약 YYYY-MM-DD HH:MM 형식이라면 YY.MM.DD HH:MM 형식으로 변환
+    if (workDatetime.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)) {
+      const datePart = workDatetime.substring(0, 10); // YYYY-MM-DD
+      const timePart = workDatetime.substring(11); // HH:MM
+
+      // YYYY-MM-DD -> YY.MM.DD 변환
+      const year = datePart.substring(2, 4);  // YY
+      const month = datePart.substring(5, 7); // MM
+      const day = datePart.substring(8, 10);  // DD
+
+      workDatetime = `${year}.${month}.${day} ${timePart}`;
+    }
+
     const workLogData = {
       id: document.getElementById('worklogId').value,
-      workDatetime: document.getElementById('workDatetime').value,
+      workDatetime: workDatetime,
       carModel: document.getElementById('carModel').value,
       productColor: document.getElementById('productColor').value,
       productCode: document.getElementById('productCode').value,
@@ -92,13 +151,25 @@ const Modal = {
       quantity: document.getElementById('quantity').value
     };
 
+    console.log('제출 데이터:', workLogData);
+
+    // 수정 모드에서는 완료 상태도 함께 업데이트
     if (editMode) {
-      // 수정 API 호출
+      const completionStatus = document.getElementById('completionStatus').checked;
+
+      // 기본 데이터 업데이트
       API.updateWorkLog(workLogData)
+      .then(() => {
+        // 상태 업데이트
+        return API.updateWorkLogStatus(workLogData.id, completionStatus);
+      })
       .then(() => {
         if (this.worklogModalInstance) {
           this.worklogModalInstance.hide();
         }
+      })
+      .catch(error => {
+        console.error('작업 내역 업데이트 오류:', error);
       });
     } else {
       // 생성 API 호출
@@ -107,6 +178,9 @@ const Modal = {
         if (this.worklogModalInstance) {
           this.worklogModalInstance.hide();
         }
+      })
+      .catch(error => {
+        console.error('작업 내역 생성 오류:', error);
       });
     }
   },
@@ -139,6 +213,9 @@ const Modal = {
       if (this.uploadModalInstance) {
         this.uploadModalInstance.hide();
       }
+    })
+    .catch(error => {
+      console.error('파일 업로드 오류:', error);
     });
   },
 

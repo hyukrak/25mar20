@@ -4,6 +4,7 @@ import com.calman.domain.worklog.dto.WorkLogDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -28,23 +29,16 @@ public interface WorkLogMapper {
   WorkLogDTO selectWorkLogById(@Param("id") Long id);
 
   /**
-   * 페이징 및 필터링으로 작업 로그 목록 조회
-   * @param params 검색 조건 (carModel, productCode, productColor, productName, status, startDate, endDate, pageSize, pageNumber 등)
+   * 필터링으로 작업 로그 목록 조회
+   * @param params 검색 조건 (carModel, productCode, productColor, productName, status, startDate, endDate, sortField, sortDirection 등)
    * @return 작업 로그 목록
    */
   List<WorkLogDTO> selectWorkLogs(Map<String, Object> params);
 
   /**
-   * 페이징을 위한 총 작업 로그 수 조회
-   * @param params 검색 조건
-   * @return 작업 로그 총 개수
-   */
-  int countWorkLogs(Map<String, Object> params);
-
-  /**
    * 작업 로그 업데이트
    * @param workLog 수정할 정보
-   * @return 영향받은
+   * @return 영향받은 행 수
    */
   int updateWorkLog(WorkLogDTO workLog);
 
@@ -67,6 +61,13 @@ public interface WorkLogMapper {
   );
 
   /**
+   * 정확한 날짜로 작업 로그 조회
+   * @param exactDate 조회할 날짜
+   * @return 작업 로그 목록
+   */
+  List<WorkLogDTO> selectWorkLogsByExactDate(@Param("exactDate") LocalDate exactDate);
+
+  /**
    * 차량 모델로 작업 로그 조회
    * @param carModel 차량 모델명
    * @return 작업 로그 목록
@@ -82,7 +83,7 @@ public interface WorkLogMapper {
 
   /**
    * 상태별 작업 로그 조회
-   * @param status 상태 (pending, in_progress, completed, rejected 등)
+   * @param status 상태 (completed, incomplete)
    * @return 작업 로그 목록
    */
   List<WorkLogDTO> selectWorkLogsByStatus(@Param("status") String status);
@@ -93,4 +94,15 @@ public interface WorkLogMapper {
    * @return 작업 로그 목록
    */
   List<WorkLogDTO> selectWorkLogsByUserId(@Param("userId") Long userId);
+
+  /**
+   * 작업 로그 완료 상태 업데이트
+   * @param id 작업 로그 ID
+   * @param completedAt 완료 시간 (미완료인 경우 null)
+   * @return 영향받은 행 수
+   */
+  int updateWorkLogCompletionStatus(
+      @Param("id") Long id,
+      @Param("completedAt") LocalDateTime completedAt
+  );
 }

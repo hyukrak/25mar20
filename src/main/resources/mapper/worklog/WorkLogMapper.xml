@@ -11,26 +11,19 @@
     <result property="productCode" column="wl_product_code"/>
     <result property="productName" column="wl_product_name"/>
     <result property="quantity" column="wl_quantity"/>
+    <result property="completedAt" column="wl_completed_at"/>
     <result property="createdAt" column="wl_created_at"/>
   </resultMap>
 
   <!-- 공통 컬럼 목록 -->
   <sql id="workLogColumns">
-    wl_id, wl_work_datetime, wl_car_model, wl_product_color, wl_product_code, wl_product_name, wl_quantity, wl_created_at
+    wl_id, wl_work_datetime, wl_car_model, wl_product_color, wl_product_code, wl_product_name, wl_quantity, wl_completed_at, wl_created_at
   </sql>
 
   <!-- 작업 로그 목록 조회 (페이징 제거) -->
   <select id="selectWorkLogs" parameterType="map" resultMap="workLogResultMap">
     SELECT
-      wl_id,
-      <!-- 날짜 포맷팅 -->
-      wl_work_datetime,
-      wl_car_model,
-      wl_product_color,
-      wl_product_code,
-      wl_product_name,
-      wl_quantity,
-      wl_created_at
+    <include refid="workLogColumns"/>
     FROM work_logs
     <where>
       <if test="carModel != null and carModel != ''">
@@ -45,9 +38,33 @@
       <if test="endDate != null">
         AND wl_work_datetime &lt;= #{endDate}
       </if>
+      <if test="status != null">
+        <choose>
+          <when test="status == 'completed'">
+            AND wl_completed_at IS NOT NULL
+          </when>
+          <when test="status == 'incomplete'">
+            AND wl_completed_at IS NULL
+          </when>
+        </choose>
+      </if>
     </where>
     ORDER BY
-        wl_work_datetime ASC
+    <choose>
+      <when test="sortField != null">
+        <choose>
+          <when test="sortField == 'wl_car_model'">wl_car_model</when>
+          <when test="sortField == 'wl_product_color'">wl_product_color</when>
+          <when test="sortField == 'wl_product_code'">wl_product_code</when>
+          <otherwise>wl_work_datetime</otherwise>
+        </choose>
+      </when>
+      <otherwise>wl_work_datetime</otherwise>
+    </choose>
+    <choose>
+      <when test="sortDirection != null and sortDirection == 'DESC'">DESC</when>
+      <otherwise>ASC</otherwise>
+    </choose>
   </select>
 
   <!-- 새 작업 로그 삽입 -->
@@ -79,6 +96,13 @@
     WHERE wl_id = #{id}
   </update>
 
+  <!-- 작업 로그 완료 상태 업데이트 -->
+  <update id="updateWorkLogCompletionStatus">
+    UPDATE work_logs
+    SET wl_completed_at = #{completedAt}
+    WHERE wl_id = #{id}
+  </update>
+
   <!-- 작업 로그 삭제 -->
   <delete id="deleteWorkLog">
     DELETE FROM work_logs
@@ -89,8 +113,16 @@
   <select id="selectWorkLogsByDateRange" resultMap="workLogResultMap">
     SELECT <include refid="workLogColumns"/>
     FROM work_logs
-    WHERE wl_work_datetime &gt;= #{startDate}
-    AND wl_work_datetime &lt;= #{endDate}
+    WHERE wl_work_datetime &gt;= strftime('%Y-%m-%dT%H:%M:%S', #{startDate})
+    AND wl_work_datetime &lt;= strftime('%Y-%m-%dT%H:%M:%S', #{endDate})
+    ORDER BY wl_work_datetime ASC
+  </select>
+
+  <!-- 정확한 날짜로 작업 로그 조회 -->
+  <select id="selectWorkLogsByExactDate" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    WHERE substr(wl_work_datetime, 1, 8) = #{exactDate}
     ORDER BY wl_work_datetime ASC
   </select>
 
@@ -99,7 +131,7 @@
     SELECT <include refid="workLogColumns"/>
     FROM work_logs
     WHERE wl_car_model LIKE '%' || #{carModel} || '%'
-    ORDER BY wl_created_at DESC
+    ORDER BY wl_work_datetime ASC
   </select>
 
   <!-- 제품 코드로 작업 로그 조회 -->
@@ -107,6 +139,31 @@
     SELECT <include refid="workLogColumns"/>
     FROM work_logs
     WHERE wl_product_code LIKE '%' || #{productCode} || '%'
-    ORDER BY wl_created_at DESC
+    ORDER BY wl_work_datetime ASC
+  </select>
+
+  <!-- 상태별 작업 로그 조회 -->
+  <select id="selectWorkLogsByStatus" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    <where>
+      <choose>
+        <when test="status == 'completed'">
+          wl_completed_at IS NOT NULL
+        </when>
+        <when test="status == 'incomplete'">
+          wl_completed_at IS NULL
+        </when>
+      </choose>
+    </where>
+    ORDER BY wl_work_datetime ASC
+  </select>
+
+  <!-- 작업자 ID로 작업 로그 조회 -->
+  <select id="selectWorkLogsByUserId" resultMap="workLogResultMap">
+    SELECT <include refid="workLogColumns"/>
+    FROM work_logs
+    WHERE wl_user_id = #{userId}
+    ORDER BY wl_work_datetime ASC
   </select>
 </mapper>

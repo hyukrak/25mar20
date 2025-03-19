@@ -3,6 +3,7 @@ package com.calman.domain.worklog.controller;
 import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.dto.WorkLogDTO.CreateRequest;
 import com.calman.domain.worklog.dto.WorkLogDTO.DetailResponse;
+import com.calman.domain.worklog.dto.WorkLogDTO.StatusUpdateRequest;
 import com.calman.domain.worklog.service.WorkLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -46,20 +48,16 @@ public class WorkLogController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-      @RequestParam(required = false, defaultValue = "1") Integer page,
-      @RequestParam(required = false, defaultValue = "10") Integer size,
       @RequestParam(required = false) String sortField,
       @RequestParam(required = false, defaultValue = "DESC") String sortDirection,
       Model model
   ) {
     Map<String, Object> result = workLogService.getWorkLogs(
         carModel, productCode, status, startDate, endDate,
-        page, size, sortField, sortDirection
+        sortField, sortDirection
     );
     model.addAttribute("workLogs", result.get("workLogs"));
     model.addAttribute("totalCount", result.get("totalCount"));
-    model.addAttribute("totalPages", result.get("totalPages"));
-    model.addAttribute("currentPage", result.get("currentPage"));
 
     // 상태 유지를 위해 필터 매개변수를 모델에 추가
     model.addAttribute("carModel", carModel);
@@ -67,6 +65,26 @@ public class WorkLogController {
     model.addAttribute("status", status);
     model.addAttribute("startDate", startDate);
     model.addAttribute("endDate", endDate);
+    model.addAttribute("sortField", sortField);
+    model.addAttribute("sortDirection", sortDirection);
+
+    return "worklogs";
+  }
+
+  /**
+   * 특정 날짜의 작업 로그만 조회
+   */
+  @GetMapping("/date/{date}")
+  public String listWorkLogsByDate(
+      @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+      @RequestParam(required = false) String sortField,
+      @RequestParam(required = false, defaultValue = "ASC") String sortDirection,
+      Model model
+  ) {
+    Map<String, Object> result = workLogService.getWorkLogsByExactDate(date);
+    model.addAttribute("workLogs", result.get("workLogs"));
+    model.addAttribute("totalCount", result.get("totalCount"));
+    model.addAttribute("selectedDate", date);
     model.addAttribute("sortField", sortField);
     model.addAttribute("sortDirection", sortDirection);
 
@@ -148,6 +166,26 @@ public class WorkLogController {
   }
 
   /**
+   * 작업 로그 완료 상태 업데이트 처리
+   */
+  @PostMapping("/{id}/status")
+  public String updateWorkLogStatus(
+      @PathVariable Long id,
+      @ModelAttribute StatusUpdateRequest statusRequest,
+      RedirectAttributes redirectAttributes
+  ) {
+    boolean updated = workLogService.updateWorkLogCompletionStatus(id, statusRequest.isCompleted());
+    if (updated) {
+      String message = statusRequest.isCompleted() ?
+          "작업이 완료 상태로 변경되었습니다." : "작업이 미완료 상태로 변경되었습니다.";
+      redirectAttributes.addFlashAttribute("successMessage", message);
+    } else {
+      redirectAttributes.addFlashAttribute("errorMessage", "작업 로그 상태 변경에 실패했습니다.");
+    }
+    return "redirect:/worklogs/" + id;
+  }
+
+  /**
    * 작업 로그 삭제 처리
    */
   @PostMapping("/{id}/delete")
@@ -158,32 +196,6 @@ public class WorkLogController {
     } else {
       redirectAttributes.addFlashAttribute("errorMessage", "작업 로그 삭제에 실패했습니다.");
     }
-    return "redirect:/worklogs";
-  }
-
-  /**
-   * 엑셀 파일 업로드 처리
-   */
-  @PostMapping("/upload")
-  public String uploadExcelFile(
-      @RequestParam("file") MultipartFile file,
-      @RequestParam("carModel") String carModel,
-      RedirectAttributes redirectAttributes) {
-
-    // ExcelUploadController의 엔드포인트 호출
-    ResponseEntity<Map<String, Object>> response = excelUploadController.uploadExcel(file, carModel);
-    Map<String, Object> result = response.getBody();
-
-    if (result != null) {
-      if ((Boolean) result.getOrDefault("success", false)) {
-        redirectAttributes.addFlashAttribute("successMessage", result.get("message"));
-      } else {
-        redirectAttributes.addFlashAttribute("errorMessage", result.get("message"));
-      }
-    } else {
-      redirectAttributes.addFlashAttribute("errorMessage", "파일 처리 중 오류가 발생했습니다.");
-    }
-
     return "redirect:/worklogs";
   }
 }

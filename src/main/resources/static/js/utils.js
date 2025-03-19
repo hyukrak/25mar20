@@ -6,7 +6,7 @@
 // Utils 네임스페이스 생성
 const Utils = {
   /**
-   * 날짜 포맷팅 함수
+   * 날짜 포맷팅 함수 - YY.MM.DD HH:MM 형식
    * @param {Date} date - 포맷팅할 날짜 객체
    * @returns {string} 포맷팅된 날짜 문자열 (YY.MM.DD HH:MM 형식)
    */
@@ -21,16 +21,77 @@ const Utils = {
   },
 
   /**
-   * 오늘 날짜 반환 함수 (YYYY-MM-DD 형식)
+   * 날짜 포맷팅 함수 - YY.MM.DD 형식 (검색용)
+   * @param {Date} date - 포맷팅할 날짜 객체
+   * @returns {string} 포맷팅된 날짜 문자열 (YY.MM.DD 형식)
+   */
+  formatDateForSearch: function(date) {
+    const year = String(date.getFullYear()).slice(-2); // 마지막 두 자리만 추출 (2025 -> 25)
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 월 (0-11이므로 +1)
+    const day = String(date.getDate()).padStart(2, '0'); // 일
+
+    return `${year}.${month}.${day}`;
+  },
+
+  /**
+   * 오늘 날짜 반환 함수 (YY.MM.DD 형식)
    * @returns {string} 오늘 날짜 문자열
    */
   getTodayString: function() {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    return this.formatDateForSearch(today);
+  },
 
-    return `${year}-${month}-${day}`;
+  /**
+   * 날짜 문자열 변환 함수 (YY.MM.DD -> YYYY-MM-DD)
+   * @param {string} dateStr - 변환할 날짜 문자열 (YY.MM.DD 형식)
+   * @returns {string} 변환된 날짜 문자열 (YYYY-MM-DD 형식)
+   */
+  convertToISODate: function(dateStr) {
+    if (!dateStr) return '';
+
+    // YY.MM.DD 형식인 경우
+    const match = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+    if (match) {
+      const year = parseInt(match[1]) + 2000; // 2자리 연도를 4자리로 변환 (25 -> 2025)
+      const month = match[2];
+      const day = match[3];
+      return `${year}-${month}-${day}`;
+    }
+
+    return dateStr; // 변환할 수 없는 경우 원래 문자열 반환
+  },
+
+  /**
+   * 날짜 문자열 변환 함수 (YYYY-MM-DD -> YY.MM.DD)
+   * @param {string} dateStr - 변환할 날짜 문자열 (YYYY-MM-DD 형식)
+   * @returns {string} 변환된 날짜 문자열 (YY.MM.DD 형식)
+   */
+  convertFromISODate: function(dateStr) {
+    if (!dateStr) return '';
+
+    // YYYY-MM-DD 형식인 경우
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      const year = String(match[1]).slice(-2); // 마지막 두 자리만 추출 (2025 -> 25)
+      const month = match[2];
+      const day = match[3];
+      return `${year}.${month}.${day}`;
+    }
+
+    return dateStr; // 변환할 수 없는 경우 원래 문자열 반환
+  },
+
+  /**
+   * 날짜 형식 검사 함수
+   * @param {string} dateStr - 검사할 날짜 문자열
+   * @returns {boolean} YY.MM.DD 형식이면 true, 아니면 false
+   */
+  isShortDateFormat: function(dateStr) {
+    if (!dateStr) return false;
+
+    // YY.MM.DD 형식 확인
+    return /^\d{2}\.\d{2}\.\d{2}$/.test(dateStr);
   },
 
   // =====================================================
@@ -83,6 +144,10 @@ const Utils = {
 
       const codeIndex = Math.floor(Math.random() * productCodes.length);
 
+      // 30% 확률로 완료 상태 설정
+      const isCompleted = Math.random() < 0.3;
+      const completedAt = isCompleted ? new Date(date.getTime() + (Math.random() * 86400000)) : null;
+
       data.push({
         id: i,
         workDatetime: this.formatDateTime(workDate),
@@ -91,7 +156,8 @@ const Utils = {
         productCode: productCodes[codeIndex],
         productName: productNames[codeIndex],
         quantity: Math.floor(Math.random() * 50) + 1,
-        createdAt: this.formatDateTime(createdAt),
+        completedAt: completedAt ? completedAt.toISOString() : null,
+        createdAt: createdAt.toISOString(),
       });
     }
 
@@ -126,6 +192,8 @@ const Utils = {
       workLogData[index].productName = productName;
       workLogData[index].quantity = quantity;
 
+      // 완료 상태는 별도로 업데이트하기 위해 유지
+
       // 화면 갱신
       UI.renderWorkLogData(workLogData);
     }
@@ -152,7 +220,7 @@ const Utils = {
         workLogData.length > 0
             ? Math.max(...workLogData.map((item) => item.id)) + 1
             : 1;
-    const now = this.formatDateTime(new Date());
+    const now = new Date();
 
     workLogData.unshift({
       id: newId,
@@ -162,7 +230,8 @@ const Utils = {
       productCode: productCode,
       productName: productName,
       quantity: quantity,
-      createdAt: now,
+      completedAt: null, // 생성 시 미완료 상태
+      createdAt: now.toISOString(),
     });
 
     // 화면 갱신

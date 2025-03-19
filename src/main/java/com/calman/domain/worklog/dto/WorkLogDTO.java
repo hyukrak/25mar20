@@ -20,6 +20,7 @@ public class WorkLogDTO {
   private String productCode;
   private String productName;
   private Integer quantity;
+  private LocalDateTime completedAt;  // Added field for completion status
   private LocalDateTime createdAt;
 
   // 새 작업 로그 생성을 위한 요청 DTO
@@ -72,6 +73,7 @@ public class WorkLogDTO {
     private String productCode;
     private String productName;
     private Integer quantity;
+    private boolean completed;  // Added field to show completion status
   }
 
   /**
@@ -83,12 +85,37 @@ public class WorkLogDTO {
   public static class DetailResponse {
 
     private Long id;                     // 고유 ID
-    private String workDatetime;  // 작업 일시
+    private String workDatetime;         // 작업 일시
     private String carModel;             // 차량 모델
     private String productColor;         // 제품 색상
     private String productCode;          // 제품 코드
     private String productName;          // 제품 이름
     private Integer quantity;            // 수량
+    private LocalDateTime completedAt;   // 완료 일시
+    private boolean completed;           // 완료 여부
     private LocalDateTime createdAt;     // 생성 일시
+
+    public DetailResponse(Long id, String workDatetime, String carModel, String productColor,
+        String productCode, String productName, Integer quantity,
+        LocalDateTime completedAt, LocalDateTime createdAt) {
+      this.id = id;
+      this.workDatetime = workDatetime;
+      this.carModel = carModel;
+      this.productColor = productColor;
+      this.productCode = productCode;
+      this.productName = productName;
+      this.quantity = quantity;
+      this.completedAt = completedAt;
+      this.completed = (completedAt != null);
+      this.createdAt = createdAt;
+    }
+  }
+
+  // Added for status update
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class StatusUpdateRequest {
+    private boolean completed; // true to mark as completed, false to mark as incomplete
   }
 }
