@@ -93,6 +93,7 @@
       wl_product_code = #{productCode},
       wl_product_name = #{productName},
       wl_quantity = #{quantity}
+
     WHERE wl_id = #{id}
   </update>
 
@@ -113,8 +114,8 @@
   <select id="selectWorkLogsByDateRange" resultMap="workLogResultMap">
     SELECT <include refid="workLogColumns"/>
     FROM work_logs
-    WHERE wl_work_datetime &gt;= strftime('%Y-%m-%dT%H:%M:%S', #{startDate})
-    AND wl_work_datetime &lt;= strftime('%Y-%m-%dT%H:%M:%S', #{endDate})
+    WHERE wl_work_datetime &gt;= #{startDate, jdbcType=VARCHAR}
+    AND wl_work_datetime &lt;= #{endDate, jdbcType=VARCHAR}
     ORDER BY wl_work_datetime ASC
   </select>
 

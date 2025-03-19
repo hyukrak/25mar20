@@ -2,6 +2,7 @@ package com.calman.domain.worklog.service;
 
 import com.calman.domain.worklog.mapper.WorkLogMapper;
 import com.calman.domain.worklog.dto.WorkLogDTO;
+import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -190,7 +191,13 @@ public class WorkLogService {
    * @return 작업 로그 목록
    */
   public List<WorkLogDTO> getWorkLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-    return workLogMapper.selectWorkLogsByDateRange(startDate, endDate);
+    // 데이터베이스 형식에 맞게 변환
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy.MM.dd HH:mm");
+    String startDateStr = startDate.format(formatter); // 예: "25.03.12 00:00"
+    String endDateStr = endDate.format(formatter);     // 예: "25.03.12 23:59"
+    System.out.println("Start: " + startDateStr);      // 디버깅용
+    System.out.println("End: " + endDateStr);          // 디버깅용
+    return workLogMapper.selectWorkLogsByDateRange(startDateStr, endDateStr); // 문자열 전달
   }
 
   /**

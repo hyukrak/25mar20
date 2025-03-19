@@ -93,7 +93,7 @@ const UI = {
           const workDateOnly = new Date(workDate.getFullYear(), workDate.getMonth(), workDate.getDate());
           const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-          if (workDateOnly <= nowDateOnly) {
+          if (workDate < now) {
             workDatetimeCell.classList.add('status-passed');  // 지난 작업
             row.classList.add('passed-task');
           } else {
