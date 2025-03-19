@@ -4,9 +4,10 @@ import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.dto.WorkLogDTO.CreateRequest;
 import com.calman.domain.worklog.service.WorkLogService;
 import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Calendar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.formula.functions.DateValue;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -99,16 +100,21 @@ public class ExcelUploadController {
       // 월일 정보를 3번째 시트의 L6 셀에서 가져옴
       Row headerRow = productNameSheet.getRow(5); // 6번째 행 (인덱스 5)
       Cell monthDayCell = headerRow != null ? headerRow.getCell(11) : null; // L열 (인덱스 11)
-      Date evaluatedDate = DateUtil.getJavaDate(monthDayCell.getNumericCellValue());
 
-      // 날짜 형식 확인 및 변환
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yy.MM.dd");   // 포맷 지정
-        String formattedDate = simpleDateFormat.format(evaluatedDate);     //
+      String formattedDate;
+      if (monthDayCell == null) {
+        log.warn("L6 셀에서 날짜를 찾을 수 없습니다. 현재 날짜를 사용합니다.");
+        Date now = new Date();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yy.MM.dd");
+        formattedDate = simpleDateFormat.format(now);
+      } else {
+        Date evaluatedDate = DateUtil.getJavaDate(monthDayCell.getNumericCellValue());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yy.MM.dd");
+        formattedDate = simpleDateFormat.format(evaluatedDate);
+      }
+      log.info("날짜 기준: {}", formattedDate);
 
-      // 가장 이른 시간부터 처리하기 위해 시간 기준으로 정렬
-      List<RowTimeInfo> rowTimeInfoList = new ArrayList<>();
-
-      // 각 행의 시간 정보 수집
+      // 순차적으로 행 처리 (정렬 없이)
       for (int rowIdx = START_ROW; rowIdx <= END_ROW; rowIdx++) {
         Row row = mainSheet.getRow(rowIdx);
         if (row == null) {
@@ -129,32 +135,59 @@ public class ExcelUploadController {
           break;
         }
 
-        String timeStr = getCellValueAsString(timeCell).trim().substring(11);     // 1899-12-31T09:34 에서 11번째 문자부터 자르기
-        rowTimeInfoList.add(new RowTimeInfo(rowIdx, timeStr));
-      }
+        // 시간 추출 및 24시간 이상 처리
+        String timeStr;
+        String adjustedDateStr = formattedDate; // 기본적으로 원래 날짜 사용
 
-      // 시간을 기준으로 오름차순 정렬 (가장 이른 시간부터)
-      rowTimeInfoList.sort(Comparator.comparing(RowTimeInfo::getTimeStr));
-      log.info("정렬된 행 수: {}", rowTimeInfoList.size());
+        if (DateUtil.isCellDateFormatted(timeCell)) {
+          // 엑셀의 시간값이 1보다 큰 경우(24시간 이상) 확인
+          double timeValue = timeCell.getNumericCellValue();
+          int additionalDays = (int)Math.floor(timeValue); // 1.25 -> 1일 추가
 
-      // 정렬된 순서대로 처리
-      for (RowTimeInfo rowTimeInfo : rowTimeInfoList) {
-        int rowIdx = rowTimeInfo.getRowIdx();
-        String timeStr = rowTimeInfo.getTimeStr();
+          // 날짜에 추가 일수 적용
+          if (additionalDays > 0) {
+            try {
+              log.info("24시간 이상 시간값 발견 ({}). {}일 추가 적용", timeValue, additionalDays);
+              SimpleDateFormat dateFormat = new SimpleDateFormat("yy.MM.dd");
+              Date date = dateFormat.parse(formattedDate);
+              Calendar calendar = Calendar.getInstance();
+              calendar.setTime(date);
+              calendar.add(Calendar.DAY_OF_MONTH, additionalDays);
+              adjustedDateStr = dateFormat.format(calendar.getTime());
+              log.info("날짜 조정: {} → {}", formattedDate, adjustedDateStr);
+            } catch (Exception e) {
+              log.error("날짜 조정 오류", e);
+            }
+          }
 
-        Row row = mainSheet.getRow(rowIdx);
-        Cell colorCell = row.getCell(COLOR_COL); // B열
+          // 시간만 추출 (일수를 제외한 소수 부분)
+          double hoursPart = timeValue - Math.floor(timeValue); // 1.25 -> 0.25 추출
+          int hours = (int)(hoursPart * 24); // 0.25 * 24 = 6시간
+          int minutes = (int)Math.round((hoursPart * 24 - hours) * 60); // 남은 분 계산
 
-        log.debug("행 {} 처리 중: 시간={}, 색상={}",
-            rowIdx + 1, timeStr,
-            getCellValueAsString(colorCell));
+          // 분이 60이 되면 시간 조정
+          if (minutes == 60) {
+            hours++;
+            minutes = 0;
+          }
+
+          timeStr = String.format("%02d:%02d", hours, minutes);
+        } else {
+          String cellValue = getCellValueAsString(timeCell).trim();
+          // 1899-12-31T09:34 형식에서 시간만 추출
+          timeStr = cellValue.contains("T") ?
+              cellValue.substring(cellValue.indexOf("T") + 1) : cellValue;
+        }
+
+        log.debug("행 {} 처리 중: 시간={}, 조정된 날짜={}, 색상={}",
+            rowIdx + 1, timeStr, adjustedDateStr, getCellValueAsString(colorCell));
 
         // 제품명은 3번째 시트에서 가져오기
         Row productNameRow = productNameSheet.getRow(rowIdx);
         Cell productNameCell = productNameRow != null ? productNameRow.getCell(PRODUCT_NAME_COL) : null; // E열
 
-        // 작업시간 문자열 생성 (yy.MM.dd HH:mm 형식)
-        String workDatetimeStr = formattedDate + " " + timeStr;
+        // 작업시간 문자열 생성 (yy.MM.dd HH:mm 형식) - 조정된 날짜 사용
+        String workDatetimeStr = adjustedDateStr + " " + timeStr;
 
         // 수량 찾기: I열부터 GJ열까지 확인
         for (int colIdx = QUANTITY_START_COL; colIdx <= QUANTITY_END_COL; colIdx++) {
@@ -246,27 +279,6 @@ public class ExcelUploadController {
       result.put("success", false);
       result.put("message", "파일 처리 중 오류가 발생했습니다: " + e.getMessage());
       return ResponseEntity.status(500).body(result);
-    }
-  }
-
-  /**
-   * 행 번호와 시간 정보를 저장하는 내부 클래스
-   */
-  private static class RowTimeInfo {
-    private final int rowIdx;
-    private final String timeStr;
-
-    public RowTimeInfo(int rowIdx, String timeStr) {
-      this.rowIdx = rowIdx;
-      this.timeStr = timeStr;
-    }
-
-    public int getRowIdx() {
-      return rowIdx;
-    }
-
-    public String getTimeStr() {
-      return timeStr;
     }
   }
 
