@@ -51,7 +51,6 @@ function applyTableStyles() {
 
 // 애플리케이션 초기화
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('작업 로그 시스템이 초기화되었습니다.');
 
   // 모달 초기화
   initializeModals();

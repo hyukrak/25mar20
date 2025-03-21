@@ -151,7 +151,6 @@ const Modal = {
       quantity: document.getElementById('quantity').value
     };
 
-    console.log('제출 데이터:', workLogData);
 
     // 수정 모드에서는 완료 상태도 함께 업데이트
     if (editMode) {
