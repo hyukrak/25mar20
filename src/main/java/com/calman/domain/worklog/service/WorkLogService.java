@@ -1,9 +1,10 @@
 package com.calman.domain.worklog.service;
 
-import com.calman.domain.worklog.mapper.WorkLogMapper;
+import com.calman.DateTimeUtils;
 import com.calman.domain.worklog.dto.WorkLogDTO;
-import java.time.format.DateTimeFormatter;
+import com.calman.domain.worklog.mapper.WorkLogMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.Map;
 /**
  * 작업 로그 서비스
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkLogService {
@@ -30,8 +32,17 @@ public class WorkLogService {
    */
   @Transactional
   public Long createWorkLog(WorkLogDTO.CreateRequest request) {
+    // 문자열 날짜를 LocalDateTime으로 변환
+    LocalDateTime workDateTime = request.getWorkDatetimeAsLocalDateTime();
+
+    if (workDateTime == null) {
+      log.warn("날짜 변환 실패: {}", request.getWorkDatetime());
+      // 변환 실패 시 현재 시간 사용 또는 오류 처리 결정
+      workDateTime = LocalDateTime.now();
+    }
+
     WorkLogDTO workLog = WorkLogDTO.builder()
-        .workDatetime(request.getWorkDatetime())
+        .workDatetime(workDateTime)  // LocalDateTime 사용
         .carModel(request.getCarModel())
         .productColor(request.getProductColor())
         .productCode(request.getProductCode())
@@ -77,15 +88,7 @@ public class WorkLogService {
   }
 
   /**
-   * 필터링으로 작업 로그 목록 조회 (페이징 제거)
-   * @param carModel 차량 모델 필터
-   * @param productCode 제품 코드 필터
-   * @param status 상태 필터 (completed, incomplete)
-   * @param startDate 시작 날짜 필터
-   * @param endDate 종료 날짜 필터
-   * @param sortField 정렬 필드 (wl_car_model, wl_product_color, wl_product_code만 허용)
-   * @param sortDirection 정렬 방향
-   * @return 작업 로그 목록
+   * 필터링으로 작업 로그 목록 조회
    */
   public Map<String, Object> getWorkLogs(
       String carModel,
@@ -126,16 +129,16 @@ public class WorkLogService {
   }
 
   /**
-   * 특정 날짜의 작업 로그 목록 조회
+   * 특정 날짜의 작업 로그 목록 조회 (개선된 버전)
    * @param date 조회할 날짜
    * @return 해당 날짜의 작업 로그 목록
    */
   public Map<String, Object> getWorkLogsByExactDate(LocalDate date) {
-    // 해당 날짜의 시작과 끝
-    LocalDateTime startOfDay = date.atStartOfDay();
-    LocalDateTime endOfDay = date.atTime(23, 59, 59);
+    // 날짜 범위 설정
+    LocalDateTime[] range = DateTimeUtils.getDateTimeRange(date);
 
-    return getWorkLogs(null, null, null, startOfDay, endOfDay, "wl_work_datetime", "ASC");
+    // 해당 날짜의 시작과 끝 시간으로 조회
+    return getWorkLogs(null, null, null, range[0], range[1], "wl_work_datetime", "ASC");
   }
 
   /**
@@ -151,8 +154,17 @@ public class WorkLogService {
       return false;
     }
 
+    // 문자열 날짜를 LocalDateTime으로 변환
+    LocalDateTime workDateTime = request.getWorkDatetimeAsLocalDateTime();
+
+    if (workDateTime == null) {
+      log.warn("날짜 변환 실패: {}", request.getWorkDatetime());
+      // 변환 실패 시 기존 값 유지
+      workDateTime = existingWorkLog.getWorkDatetime();
+    }
+
     // 필드 업데이트
-    existingWorkLog.setWorkDatetime(request.getWorkDatetime());
+    existingWorkLog.setWorkDatetime(workDateTime);
     existingWorkLog.setCarModel(request.getCarModel());
     existingWorkLog.setProductColor(request.getProductColor());
     existingWorkLog.setProductCode(request.getProductCode());
@@ -185,19 +197,13 @@ public class WorkLogService {
   }
 
   /**
-   * 날짜 범위로 작업 로그 조회
+   * 날짜 범위로 작업 로그 조회 (개선된 버전)
    * @param startDate 시작 날짜
    * @param endDate 종료 날짜
    * @return 작업 로그 목록
    */
   public List<WorkLogDTO> getWorkLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-    // 데이터베이스 형식에 맞게 변환
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy.MM.dd HH:mm");
-    String startDateStr = startDate.format(formatter); // 예: "25.03.12 00:00"
-    String endDateStr = endDate.format(formatter);     // 예: "25.03.12 23:59"
-    System.out.println("Start: " + startDateStr);      // 디버깅용
-    System.out.println("End: " + endDateStr);          // 디버깅용
-    return workLogMapper.selectWorkLogsByDateRange(startDateStr, endDateStr); // 문자열 전달
+    return workLogMapper.selectWorkLogsByDateRange(startDate, endDate);
   }
 
   /**

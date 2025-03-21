@@ -1,5 +1,6 @@
 package com.calman.domain.worklog.controller;
 
+import com.calman.DateTimeUtils;
 import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.dto.WorkLogDTO.CreateRequest;
 import com.calman.domain.worklog.dto.WorkLogDTO.DetailResponse;
@@ -7,11 +8,9 @@ import com.calman.domain.worklog.dto.WorkLogDTO.StatusUpdateRequest;
 import com.calman.domain.worklog.service.WorkLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
@@ -27,7 +26,6 @@ import java.util.Map;
 public class WorkLogController {
 
   private final WorkLogService workLogService;
-  private final ExcelUploadController excelUploadController;
 
   /**
    * 작업 로그 대시보드 페이지
@@ -135,7 +133,7 @@ public class WorkLogController {
 
     // 편집을 위해 DTO를 UpdateRequest로 변환
     WorkLogDTO.UpdateRequest updateRequest = new WorkLogDTO.UpdateRequest();
-    updateRequest.setWorkDatetime(workLog.getWorkDatetime());
+    updateRequest.setWorkDatetime(DateTimeUtils.formatForDisplay(workLog.getWorkDatetime()));
     updateRequest.setCarModel(workLog.getCarModel());
     updateRequest.setProductColor(workLog.getProductColor());
     updateRequest.setProductCode(workLog.getProductCode());

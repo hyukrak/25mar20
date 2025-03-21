@@ -252,5 +252,53 @@ const Utils = {
 
     // 화면 갱신
     UI.renderWorkLogData(workLogData);
+  },
+
+  /**
+   * ISO 형식의 날짜 문자열을 화면 표시용 'YY.MM.DD HH:mm' 형식으로 변환
+   * @param {string} isoDateStr - ISO 형식 날짜 문자열 (예: "2025-03-21T14:30:00")
+   * @returns {string} 변환된 날짜 문자열 (예: "25.03.21 14:30")
+   */
+  formatISOToDisplay: function(isoDateStr) {
+    if (!isoDateStr) return '';
+
+    try {
+      const date = new Date(isoDateStr);
+
+      // 유효한 날짜인지 확인
+      if (isNaN(date.getTime())) {
+        return isoDateStr; // 변환 실패 시 원본 반환
+      }
+
+      const year = String(date.getFullYear()).slice(-2); // 2자리 연도
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${year}.${month}.${day} ${hours}:${minutes}`;
+    } catch (e) {
+      console.error('날짜 변환 오류:', e);
+      return isoDateStr; // 오류 시 원본 반환
+    }
+  },
+
+  /**
+   * 'YY.MM.DD' 형식의 날짜 문자열을 ISO 형식으로 변환 (검색용)
+   * @param {string} shortDateStr - 'YY.MM.DD' 형식 문자열
+   * @returns {string} ISO 날짜 문자열 (YYYY-MM-DD)
+   */
+  shortDateToISO: function(shortDateStr) {
+    if (!shortDateStr) return '';
+
+    // YY.MM.DD 형식 체크
+    const match = shortDateStr.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+    if (!match) return shortDateStr;
+
+    const year = parseInt('20' + match[1]); // 2자리 연도를 4자리로 확장
+    const month = match[2];
+    const day = match[3];
+
+    return `${year}-${month}-${day}`;
   }
 };

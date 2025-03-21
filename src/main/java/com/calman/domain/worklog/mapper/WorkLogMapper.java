@@ -56,8 +56,8 @@ public interface WorkLogMapper {
    * @return 작업 로그 목록
    */
   List<WorkLogDTO> selectWorkLogsByDateRange(
-      @Param("startDate") String startDate,
-      @Param("endDate") String endDate
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate
   );
 
   /**

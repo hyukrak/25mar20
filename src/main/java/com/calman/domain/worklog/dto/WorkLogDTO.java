@@ -1,11 +1,14 @@
 package com.calman.domain.worklog.dto;
 
-import java.time.LocalDateTime;
-import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import com.calman.DateTimeUtils;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -14,13 +17,20 @@ import lombok.Setter;
 public class WorkLogDTO {
 
   private Long id;
-  private String workDatetime;
+
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  private LocalDateTime workDatetime;  // String에서 LocalDateTime으로 변경
+
   private String carModel;
   private String productColor;
   private String productCode;
   private String productName;
   private Integer quantity;
-  private LocalDateTime completedAt;  // Added field for completion status
+
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  private LocalDateTime completedAt;
+
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime createdAt;
 
   // 새 작업 로그 생성을 위한 요청 DTO
@@ -30,19 +40,25 @@ public class WorkLogDTO {
   public static class CreateRequest {
 
     @Setter
-    private String workDatetimeStr;
+    private String workDatetimeStr;  // 문자열 형태 유지 (UI 호환성)
     private String carModel;
     private String productColor;
     private String productCode;
     private String productName;
     private Integer quantity;
 
+    // 기존 메서드 (하위 호환성)
     public String getWorkDatetime() {
       return this.workDatetimeStr;
     }
 
     public void setWorkDatetime(String workDatetimeStr) {
       this.workDatetimeStr = workDatetimeStr;
+    }
+
+    // 내부 변환용 메서드
+    public LocalDateTime getWorkDatetimeAsLocalDateTime() {
+      return DateTimeUtils.parseFromDisplayFormat(this.workDatetimeStr);
     }
   }
 
@@ -51,13 +67,17 @@ public class WorkLogDTO {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class UpdateRequest {
-
-    private String workDatetime;
+    private String workDatetime;  // UI 입력 형식 유지
     private String carModel;
     private String productColor;
     private String productCode;
     private String productName;
     private Integer quantity;
+
+    // 내부 변환용 메서드
+    public LocalDateTime getWorkDatetimeAsLocalDateTime() {
+      return DateTimeUtils.parseFromDisplayFormat(this.workDatetime);
+    }
   }
 
   // 목록 뷰용 응답 DTO (더 적은 필드 포함)
@@ -65,37 +85,55 @@ public class WorkLogDTO {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class ListResponse {
-
     private Long id;
-    private String workDatetime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime workDatetime;
+
     private String carModel;
     private String productColor;
     private String productCode;
     private String productName;
     private Integer quantity;
-    private boolean completed;  // Added field to show completion status
+    private boolean completed;
+
+    // 화면 표시용 문자열 리턴 추가
+    public String getFormattedWorkDatetime() {
+      return DateTimeUtils.formatForDisplay(workDatetime);
+    }
   }
 
-  /**
-   * 상세 뷰용 응답 DTO (모든 필드 포함)
-   */
+  // 상세 뷰용 응답 DTO
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
   public static class DetailResponse {
+    private Long id;
 
-    private Long id;                     // 고유 ID
-    private String workDatetime;         // 작업 일시
-    private String carModel;             // 차량 모델
-    private String productColor;         // 제품 색상
-    private String productCode;          // 제품 코드
-    private String productName;          // 제품 이름
-    private Integer quantity;            // 수량
-    private LocalDateTime completedAt;   // 완료 일시
-    private boolean completed;           // 완료 여부
-    private LocalDateTime createdAt;     // 생성 일시
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime workDatetime;
 
-    public DetailResponse(Long id, String workDatetime, String carModel, String productColor,
+    private String carModel;
+    private String productColor;
+    private String productCode;
+    private String productName;
+    private Integer quantity;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime completedAt;
+
+    private boolean completed;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime createdAt;
+
+    // 화면 표시용 문자열 리턴 추가
+    public String getFormattedWorkDatetime() {
+      return DateTimeUtils.formatForDisplay(workDatetime);
+    }
+
+    // 생성자 오버로드
+    public DetailResponse(Long id, LocalDateTime workDatetime, String carModel, String productColor,
         String productCode, String productName, Integer quantity,
         LocalDateTime completedAt, LocalDateTime createdAt) {
       this.id = id;
@@ -111,11 +149,11 @@ public class WorkLogDTO {
     }
   }
 
-  // Added for status update
+  // 상태 업데이트 요청
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
   public static class StatusUpdateRequest {
-    private boolean completed; // true to mark as completed, false to mark as incomplete
+    private boolean completed;
   }
 }

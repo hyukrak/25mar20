@@ -61,31 +61,13 @@ const UI = {
 
         // 작업시간 셀 (상태에 따른 색상 적용)
         const workDatetimeCell = document.createElement('td');
-        workDatetimeCell.textContent = workLog.workDatetime;
+
+        // ISO 형식(2025-03-21T14:30:00)을 'YY.MM.DD HH:mm' 형식으로 변환
+        const formattedDateTime = Utils.formatISOToDisplay(workLog.workDatetime);
+        workDatetimeCell.textContent = formattedDateTime;
 
         // 작업시간과 현재 시간 비교를 위한 날짜 파싱
-        // YY.MM.DD HH:MM 형식 파싱
-        const workDateStr = workLog.workDatetime;
-        let workDate = null;
-
-        if (workDateStr) {
-          const parts = workDateStr.split(' ');
-          if (parts.length === 2) {
-            const dateParts = parts[0].split('.');
-            const timeParts = parts[1].split(':');
-
-            if (dateParts.length === 3 && timeParts.length === 2) {
-              // 20YY로 연도 변환 (2자리->4자리)
-              const year = parseInt(dateParts[0]) + 2000; // 25로 시작하면 2025년
-              const month = parseInt(dateParts[1]) - 1; // JavaScript의 월은 0부터 시작
-              const day = parseInt(dateParts[2]);
-              const hour = parseInt(timeParts[0]);
-              const minute = parseInt(timeParts[1]);
-
-              workDate = new Date(year, month, day, hour, minute);
-            }
-          }
-        }
+        const workDate = workLog.workDatetime ? new Date(workLog.workDatetime) : null;
 
         // 작업일이 오늘이거나 과거인 경우 passed 스타일 적용
         if (workDate) {

@@ -1,11 +1,9 @@
 package com.calman.domain.worklog.controller;
 
+import com.calman.DateTimeUtils;
 import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.dto.WorkLogDTO.CreateRequest;
 import com.calman.domain.worklog.service.WorkLogService;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.Calendar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -19,8 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.util.*;
 
 /**
@@ -97,22 +96,18 @@ public class ExcelUploadController {
       Map<Integer, String> productCodeMap = buildProductCodeMap(mainSheet);
       log.info("제품 코드 맵 구성 결과: {} 개의 코드 매핑됨", productCodeMap.size());
 
-      // 월일 정보를 3번째 시트의 L6 셀에서 가져옴
+      // 날짜 기준 정보를 가져옴 (3번째 시트의 L6 셀)
+      Date baseDate = null;
       Row headerRow = productNameSheet.getRow(5); // 6번째 행 (인덱스 5)
       Cell monthDayCell = headerRow != null ? headerRow.getCell(11) : null; // L열 (인덱스 11)
 
-      String formattedDate;
-      if (monthDayCell == null) {
+      if (monthDayCell == null || monthDayCell.getCellType() == CellType.BLANK) {
         log.warn("L6 셀에서 날짜를 찾을 수 없습니다. 현재 날짜를 사용합니다.");
-        Date now = new Date();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yy.MM.dd");
-        formattedDate = simpleDateFormat.format(now);
+        baseDate = new Date();
       } else {
-        Date evaluatedDate = DateUtil.getJavaDate(monthDayCell.getNumericCellValue());
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yy.MM.dd");
-        formattedDate = simpleDateFormat.format(evaluatedDate);
+        baseDate = DateUtil.getJavaDate(monthDayCell.getNumericCellValue());
       }
-      log.info("날짜 기준: {}", formattedDate);
+      log.info("날짜 기준: {}", baseDate);
 
       // 순차적으로 행 처리 (정렬 없이)
       for (int rowIdx = START_ROW; rowIdx <= END_ROW; rowIdx++) {
@@ -135,59 +130,23 @@ public class ExcelUploadController {
           break;
         }
 
-        // 시간 추출 및 24시간 이상 처리
-        String timeStr;
-        String adjustedDateStr = formattedDate; // 기본적으로 원래 날짜 사용
+        // 시간 데이터 추출 및 LocalDateTime 생성
+        LocalDateTime workDateTime = extractDateTime(timeCell, baseDate);
 
-        if (DateUtil.isCellDateFormatted(timeCell)) {
-          // 엑셀의 시간값이 1보다 큰 경우(24시간 이상) 확인
-          double timeValue = timeCell.getNumericCellValue();
-          int additionalDays = (int)Math.floor(timeValue); // 1.25 -> 1일 추가
-
-          // 날짜에 추가 일수 적용
-          if (additionalDays > 0) {
-            try {
-              log.info("24시간 이상 시간값 발견 ({}). {}일 추가 적용", timeValue, additionalDays);
-              SimpleDateFormat dateFormat = new SimpleDateFormat("yy.MM.dd");
-              Date date = dateFormat.parse(formattedDate);
-              Calendar calendar = Calendar.getInstance();
-              calendar.setTime(date);
-              calendar.add(Calendar.DAY_OF_MONTH, additionalDays);
-              adjustedDateStr = dateFormat.format(calendar.getTime());
-              log.info("날짜 조정: {} → {}", formattedDate, adjustedDateStr);
-            } catch (Exception e) {
-              log.error("날짜 조정 오류", e);
-            }
-          }
-
-          // 시간만 추출 (일수를 제외한 소수 부분)
-          double hoursPart = timeValue - Math.floor(timeValue); // 1.25 -> 0.25 추출
-          int hours = (int)(hoursPart * 24); // 0.25 * 24 = 6시간
-          int minutes = (int)Math.round((hoursPart * 24 - hours) * 60); // 남은 분 계산
-
-          // 분이 60이 되면 시간 조정
-          if (minutes == 60) {
-            hours++;
-            minutes = 0;
-          }
-
-          timeStr = String.format("%02d:%02d", hours, minutes);
-        } else {
-          String cellValue = getCellValueAsString(timeCell).trim();
-          // 1899-12-31T09:34 형식에서 시간만 추출
-          timeStr = cellValue.contains("T") ?
-              cellValue.substring(cellValue.indexOf("T") + 1) : cellValue;
+        if (workDateTime == null) {
+          log.error("행 {}에서 시간 데이터를 추출할 수 없습니다.", rowIdx + 1);
+          errors.add("행 " + (rowIdx + 1) + ": 시간 데이터 추출 실패");
+          continue;
         }
 
-        log.debug("행 {} 처리 중: 시간={}, 조정된 날짜={}, 색상={}",
-            rowIdx + 1, timeStr, adjustedDateStr, getCellValueAsString(colorCell));
+        // 디버그 로깅
+        log.debug("행 {} 처리 중: 날짜시간={}, 색상={}",
+            rowIdx + 1, workDateTime, getCellValueAsString(colorCell));
 
         // 제품명은 3번째 시트에서 가져오기
         Row productNameRow = productNameSheet.getRow(rowIdx);
-        Cell productNameCell = productNameRow != null ? productNameRow.getCell(PRODUCT_NAME_COL) : null; // E열
-
-        // 작업시간 문자열 생성 (yy.MM.dd HH:mm 형식) - 조정된 날짜 사용
-        String workDatetimeStr = adjustedDateStr + " " + timeStr;
+        Cell productNameCell = productNameRow != null ?
+            productNameRow.getCell(PRODUCT_NAME_COL) : null; // E열
 
         // 수량 찾기: I열부터 GJ열까지 확인
         for (int colIdx = QUANTITY_START_COL; colIdx <= QUANTITY_END_COL; colIdx++) {
@@ -223,16 +182,19 @@ public class ExcelUploadController {
               // CreateRequest 생성
               CreateRequest request = new CreateRequest();
 
-              // 작업시간 설정 (문자열 형식 그대로 설정)
-              request.setWorkDatetime(workDatetimeStr);
+              // 날짜시간 문자열 변환 (UI 호환성)
+              String formattedDateTime = DateTimeUtils.formatForDisplay(workDateTime);
+
+              // 작업시간 설정
+              request.setWorkDatetime(formattedDateTime);
               request.setCarModel(carModel);
               request.setProductColor(getCellValueAsString(colorCell));
               request.setProductCode(productCode);
               request.setProductName(getCellValueAsString(productNameCell));
               request.setQuantity(quantity);
 
-              log.info("작업 로그 생성 요청: 시간={}, 차종={}, 색상={}, 코드={}, 이름={}, 수량={}",
-                  workDatetimeStr,
+              log.info("작업 로그 생성 요청: 날짜시간={}, 차종={}, 색상={}, 코드={}, 이름={}, 수량={}",
+                  formattedDateTime,
                   request.getCarModel(),
                   request.getProductColor(),
                   request.getProductCode(),
@@ -279,6 +241,57 @@ public class ExcelUploadController {
       result.put("success", false);
       result.put("message", "파일 처리 중 오류가 발생했습니다: " + e.getMessage());
       return ResponseEntity.status(500).body(result);
+    }
+  }
+
+  /**
+   * 엑셀 셀에서 날짜/시간 데이터 추출하여 LocalDateTime 생성
+   *
+   * @param timeCell 시간 정보가 있는 셀
+   * @param baseDate 기준 날짜
+   * @return 변환된 LocalDateTime
+   */
+  private LocalDateTime extractDateTime(Cell timeCell, Date baseDate) {
+    if (timeCell == null) {
+      return null;
+    }
+
+    try {
+      if (DateUtil.isCellDateFormatted(timeCell)) {
+        // 엑셀의 시간값 가져오기
+        double timeValue = timeCell.getNumericCellValue();
+
+        // DateTimeUtils 사용하여 날짜+시간 조합
+        return DateTimeUtils.combineExcelDateTime(baseDate, timeValue);
+      } else {
+        // 시간 셀이 날짜 형식이 아닌 경우 (텍스트 등)
+        String cellValue = getCellValueAsString(timeCell).trim();
+
+        try {
+          // 1899-12-31T09:34 형식에서 시간만 추출
+          String timeStr = cellValue.contains("T") ?
+              cellValue.substring(cellValue.indexOf("T") + 1) : cellValue;
+
+          // 기준 날짜 사용
+          Calendar calendar = Calendar.getInstance();
+          calendar.setTime(baseDate);
+          LocalDate baseDateAsLocalDate = LocalDate.of(
+              calendar.get(Calendar.YEAR),
+              calendar.get(Calendar.MONTH) + 1,
+              calendar.get(Calendar.DAY_OF_MONTH)
+          );
+
+          LocalTime time = LocalTime.parse(timeStr);
+          return LocalDateTime.of(baseDateAsLocalDate, time);
+        } catch (Exception e) {
+          log.error("시간 형식 파싱 오류: {}", cellValue, e);
+          // 실패 시 null 반환
+          return null;
+        }
+      }
+    } catch (Exception e) {
+      log.error("날짜/시간 추출 오류", e);
+      return null;
     }
   }
 
