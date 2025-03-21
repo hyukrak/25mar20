@@ -9,7 +9,7 @@
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 11;
+  z-index: 1100;
 }
 
 /* Toast 애니메이션: 나타날 때는 위로 슬라이드, 사라질 때는 아래로 슬라이드 */
