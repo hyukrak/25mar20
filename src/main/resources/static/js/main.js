@@ -65,8 +65,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // 테이블 이벤트 리스너 설정
   setupTableListeners();
 
-  // 초기 데이터 로드
-  API.fetchWorkLogsData();
+  // 오늘 날짜를 기본값으로 설정
+  const today = new Date();
+  const formattedToday = Utils.formatDateForSearch(today);
+  selectedDate = formattedToday;
+
+  // 날짜 버튼 텍스트 업데이트
+  document.getElementById('btnDate').innerHTML = '<i class="bi bi-calendar"></i> ' + formattedToday;
+
+  // 오늘 날짜 데이터로 필터링
+  UI.filterDataByDate(formattedToday);
 });
 
 /**
@@ -103,6 +111,7 @@ function initializeDatePicker() {
     locale: 'ko',
     dateFormat: 'y.m.d',
     altFormat: 'y.m.d',
+    defaultDate: new Date(), // 기본값을 오늘 날짜로 설정
     onChange: function (selectedDates, dateStr, instance) {
       // 선택된 날짜가 있을 때만 처리
       if (selectedDates.length > 0) {
