@@ -10,7 +10,13 @@ const API = {
    * @returns {Promise} API 호출 결과 Promise
    */
   fetchWorkLogsData: function() {
-    // 로딩 표시 시작
+    // 날짜 필터가 활성화되어 있는지 확인
+    if (selectedDate && Utils.isShortDateFormat(selectedDate)) {
+      // 날짜 필터가 있으면 fetchWorkLogsByDate 함수를 대신 사용
+      return this.fetchWorkLogsByDate(selectedDate);
+    }
+
+    // 날짜 필터가 활성화되어 있지 않으면 일반적인 데이터 로딩 계속 진행
     loading = true;
     document.getElementById('loading').style.display = 'block';
 
@@ -159,7 +165,7 @@ const API = {
     // 날짜 필터가 있으면 추가
     if (selectedDate && Utils.isShortDateFormat(selectedDate)) {
       // 검색용 날짜 변환 (YY.MM.DD -> YYYY-MM-DD)
-      const isoDate = Utils.convertToISODate(selectedDate);
+      // const isoDate = Utils.convertToISODate(selectedDate);
 
       // date/{date} 형식의 API를 사용
       return this.fetchWorkLogsByDate(selectedDate);
