@@ -42,3 +42,126 @@
   color: #6c757d;
   margin-top: 0.25rem;
 }
+
+/* 날짜 선택기 관련 스타일 */
+.date-picker-container {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+
+/* 작업 시간 입력 필드가 전체 너비를 차지하도록 설정 */
+#workDatetime.modal-form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* flatpickr가 자동 생성하는 wrapper 요소의 스타일을 블록 레벨로 변경 */
+.flatpickr-wrapper {
+  display: block !important; /* inline-block을 덮어쓰기 */
+  width: 100%;
+}
+
+.date-picker-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+/* flatpickr 기본 스타일 커스터마이징 */
+.flatpickr-calendar {
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 307px !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background-color: var(--main-gray);
+  border-color: var(--main-gray);
+}
+
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+  background-color: var(--main-gray);
+  border-color: var(--main-gray);
+}
+
+/* 시간 선택기 스타일 */
+.flatpickr-time {
+  border-top: 1px solid #e6e6e6;
+  margin: 5px 0 0;
+  padding: 10px 0;
+}
+
+.flatpickr-time .numInputWrapper {
+  flex: 1;
+  width: 40%;
+}
+
+.flatpickr-time input {
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  padding: 2px;
+  border: 1px solid #e6e6e6;
+  border-radius: 3px;
+  height: 30px;
+}
+
+.flatpickr-time .flatpickr-time-separator {
+  width: 20%;
+  display: inline-block;
+  text-align: center;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  #workDatetime.modal-form-input {
+    width: 100%;
+  }
+
+  .flatpickr-time input {
+    font-size: 12px;
+    padding: 1px;
+  }
+}
+
+/* 상태 컨테이너 스타일 - 레이블과 스위치를 한 줄에 배치 */
+.status-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.status-label {
+  margin-bottom: 0;
+  margin-right: 20px;
+  min-width: 40px;
+}
+
+/* 완료 상태 토글 스위치 */
+.form-check-input:checked {
+  background-color: var(--main-gray);
+  border-color: var(--main-gray);
+}
+
+.form-switch {
+  display: flex;
+  align-items: center;
+}
+
+.form-switch .form-check-input {
+  width: 3em;
+  height: 1.5em;
+}
+
+.form-check-label {
+  font-size: 1.1em;
+  margin-left: 10px;
+}

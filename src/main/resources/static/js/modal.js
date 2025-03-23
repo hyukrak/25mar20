@@ -3,6 +3,9 @@
  * 모달 창 표시 및 관련 작업을 처리하는 함수들을 포함합니다.
  */
 
+// 전역 변수로 flatpickr 인스턴스 선언
+let datePickerInstance = null;
+
 // Modal 네임스페이스 생성
 const Modal = {
   // 모달 인스턴스
@@ -30,6 +33,76 @@ const Modal = {
         const isChecked = this.checked;
         document.getElementById('completionStatusText').textContent = isChecked ? '완료' : '미완료';
       });
+    }
+
+    // 모달 이벤트 리스너 설정
+    const worklogModal = document.getElementById('worklogModal');
+    if (worklogModal) {
+      worklogModal.addEventListener('shown.bs.modal', this.onModalShown);
+      worklogModal.addEventListener('hidden.bs.modal', this.onModalHidden);
+    }
+  },
+
+  /**
+   * 모달이 표시된 후 호출되는 이벤트 핸들러
+   */
+  onModalShown: function() {
+    // 기존 인스턴스가 있으면 제거
+    if (datePickerInstance) {
+      datePickerInstance.destroy();
+      datePickerInstance = null;
+    }
+
+    // 날짜 선택기 초기화 (모달이 표시된 후에)
+    const dateInput = document.getElementById('workDatetime');
+    if (dateInput) {
+      datePickerInstance = flatpickr(dateInput, {
+        locale: 'ko',
+        enableTime: true,
+        dateFormat: 'y.m.d H:i',
+        altFormat: 'y.m.d H:i',
+        time_24hr: true,
+        minuteIncrement: 1,        // 1분 단위로 변경
+        allowInput: true,          // 키보드로 직접 입력 허용
+        clickOpens: true,          // 클릭 시 달력 열기
+        closeOnSelect: false,      // 날짜 선택 시 자동으로 닫히지 않음
+        static: true               // 달력이 입력 필드 위에 고정됨
+      });
+
+      // 날짜 설정 (현재 입력 필드의 값 사용)
+      const dateValue = dateInput.value.trim();
+      if (dateValue) {
+        try {
+          // 날짜 문자열 파싱 (YY.MM.DD HH:MM 형식)
+          const dateParts = dateValue.match(/(\d{2})\.(\d{2})\.(\d{2}) (\d{2}):(\d{2})/);
+          if (dateParts) {
+            const year = parseInt('20' + dateParts[1]); // 2자리 연도를 4자리로 확장
+            const month = parseInt(dateParts[2]) - 1;   // 월은 0-11
+            const day = parseInt(dateParts[3]);
+            const hour = parseInt(dateParts[4]);
+            const minute = parseInt(dateParts[5]);
+
+            const date = new Date(year, month, day, hour, minute);
+            console.log('날짜 설정:', date);
+            datePickerInstance.setDate(date, true);
+          }
+        } catch (e) {
+          console.error('날짜 파싱 오류:', e);
+        }
+      }
+
+      // 날짜 확인/취소 버튼 관련 코드 제거 (요청에 따라 버튼을 제거했으므로)
+    }
+  },
+
+  /**
+   * 모달이 닫힌 후 호출되는 이벤트 핸들러
+   */
+  onModalHidden: function() {
+    // flatpickr 인스턴스 제거
+    if (datePickerInstance) {
+      datePickerInstance.destroy();
+      datePickerInstance = null;
     }
   },
 
@@ -95,7 +168,11 @@ const Modal = {
 
     document.getElementById('worklogModalLabel').textContent = '작업 내역 수정';
     document.getElementById('worklogId').value = id;
-    document.getElementById('workDatetime').value = cells[1].textContent.trim();
+
+    // 작업시간 설정 (flatpickr는 모달이 표시된 후 이벤트에서 초기화됨)
+    const workDatetimeValue = cells[1].textContent.trim();
+    document.getElementById('workDatetime').value = workDatetimeValue;
+
     document.getElementById('carModel').value = cells[2].textContent.trim();
     document.getElementById('productColor').value = cells[3].textContent.trim();
     document.getElementById('productCode').value = cells[4].textContent.trim();

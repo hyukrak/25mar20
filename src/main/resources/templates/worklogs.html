@@ -152,7 +152,9 @@
 
 					<div class="modal-form-group">
 						<label class="modal-form-label" for="workDatetime">작업 시간</label>
-						<input type="text" class="modal-form-input" id="workDatetime" name="workDatetime" required />
+						<div class="date-picker-container">
+							<input type="text" class="modal-form-input" id="workDatetime" name="workDatetime" required />
+						</div>
 					</div>
 
 					<div class="modal-form-group">
@@ -187,12 +189,14 @@
 					</div>
 
 					<div class="modal-form-group" id="completionStatusContainer">
-						<label class="modal-form-label">완료 상태</label>
-						<div class="form-check form-switch">
-							<input class="form-check-input" type="checkbox" id="completionStatus" />
-							<label class="form-check-label" for="completionStatus">
-								<span id="completionStatusText">미완료</span>
-							</label>
+						<div class="status-container">
+							<label class="modal-form-label status-label">상태</label>
+							<div class="form-check form-switch">
+								<input class="form-check-input" type="checkbox" id="completionStatus" />
+								<label class="form-check-label" for="completionStatus">
+									<span id="completionStatusText">미완료</span>
+								</label>
+							</div>
 						</div>
 					</div>
 				</form>
