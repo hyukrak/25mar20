@@ -17,13 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.io.InputStream;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
- * 엑셀 파일 업로드 및 처리를 위한 컨트롤러
+ * 엑셀 파일 업로드 및 처리를 위한 컨트롤러 - 개선된 버전
+ * 3번 시트(HDL계획)에서 직접 데이터를 처리하도록 최적화
  */
 @Slf4j
 @RestController
@@ -33,25 +36,34 @@ public class ExcelUploadController {
 
   private final WorkLogService workLogService;
 
-  private static final int MAIN_SHEET_INDEX = 3; // 4번째 시트 (인덱스 3)
-  private static final int PRODUCT_NAME_SHEET_INDEX = 2; // 3번째 시트 (인덱스 2)
+  // 시트 인덱스 상수
+  private static final int PRODUCT_PLAN_SHEET_INDEX = 2; // 3번째 시트 (인덱스 2) - HDL계획
+  private static final int MAIN_SHEET_INDEX = 3; // 4번째 시트 (인덱스 3) - 메인 시트
 
-  private static final int START_ROW = 7; // 8번째 행 (인덱스 7)
-  private static final int END_ROW = 199; // 200번째 행 (인덱스 199)
+  // HDL계획 시트(3번 시트)의 데이터 열 상수
+  private static final int MIN_START_ROW = 7; // 최소 시작 행 (인덱스 7, 8번째 행부터)
 
-  private static final int DATETIME_COL = 2; // C열 (인덱스 2)
-  private static final int COLOR_COL = 1; // B열 (인덱스 1)
-  private static final int PRODUCT_NAME_COL = 4; // E열 (인덱스 4)
+  private static final int PRODUCT_CODE_COL_C = 2; // C열 - 제품코드 매칭용 (인덱스 2)
+  private static final int COLOR_CODE_COL_D = 3; // D열 - 색상코드 (인덱스 3)
+  private static final int PRODUCT_NAME_COL_E = 4; // E열 - 제품명 (인덱스 4)
 
-  private static final int QUANTITY_START_COL = 8; // I열 (인덱스 8)
-  private static final int QUANTITY_END_COL = 191; // GJ열 (인덱스 191)
+  private static final int QUANTITY_COL_H = 7; // H열 - 수량1 (인덱스 7)
+  private static final int QUANTITY_COL_I = 8; // I열 - 수량2 (인덱스 8)
+  private static final int QUANTITY_COL_J = 9; // J열 - 수량3 (인덱스 9)
 
-  private static final int PRODUCT_CODE_START_ROW = 8; // 9번째 행 (인덱스 8)
-  private static final int PRODUCT_CODE_END_ROW = 188; // GG번째 행 (인덱스 188)
-  private static final int PRODUCT_CODE_COL = 6; // G열 (인덱스 6)
+  private static final int TIME_COL_L = 11; // L열 - 시작시간 (인덱스 11)
+
+  // 메인 시트(4번 시트)의 헤더 상수
+  private static final int HEADER_ROW = 6; // 7번째 행 (인덱스 6)
+  private static final int HEADER_START_COL = 8; // I열부터 시작 (인덱스 8)
+
+  // 날짜 정보 상수
+  private static final int DATE_HEADER_ROW = 5; // 6번째 행 (인덱스 5)
+  private static final int DATE_COL = 11; // L열 (인덱스 11)
 
   /**
    * 엑셀 파일을 업로드하고 내용을 DB에 저장
+   * 개선된 버전: 3번 시트(HDL계획)에서 직접 데이터를 처리하도록 최적화
    *
    * @param file 업로드할 엑셀 파일
    * @param carModel 대상 차종
@@ -64,7 +76,7 @@ public class ExcelUploadController {
 
     Map<String, Object> result = new HashMap<>();
     List<String> errors = new ArrayList<>();
-    int successCount = 0;
+    AtomicInteger successCount = new AtomicInteger(0);
 
     if (file.isEmpty()) {
       result.put("success", false);
@@ -75,11 +87,14 @@ public class ExcelUploadController {
     log.info("파일 업로드 시작: 파일명={}, 크기={}bytes, 차종={}",
         file.getOriginalFilename(), file.getSize(), carModel);
 
-    try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-      // 시트 존재 확인
+    // 입력 스트림을 미리 가져와서 예외 처리를 간소화
+    try (InputStream fileInputStream = file.getInputStream();
+        Workbook workbook = new XSSFWorkbook(fileInputStream)) {
+
+      // 필요한 시트 존재 확인
       if (workbook.getNumberOfSheets() <= MAIN_SHEET_INDEX ||
-          workbook.getNumberOfSheets() <= PRODUCT_NAME_SHEET_INDEX) {
-        log.error("필요한 시트가 없습니다. 필요: 4번째, 3번째 시트, 실제 시트 개수: {}",
+          workbook.getNumberOfSheets() <= PRODUCT_PLAN_SHEET_INDEX) {
+        log.error("필요한 시트가 없습니다. 필요: 3번째, 4번째 시트, 실제 시트 개수: {}",
             workbook.getNumberOfSheets());
         result.put("success", false);
         result.put("message", "필요한 시트가 엑셀 파일에 없습니다.");
@@ -87,149 +102,48 @@ public class ExcelUploadController {
       }
 
       Sheet mainSheet = workbook.getSheetAt(MAIN_SHEET_INDEX);
-      Sheet productNameSheet = workbook.getSheetAt(PRODUCT_NAME_SHEET_INDEX);
+      Sheet productPlanSheet = workbook.getSheetAt(PRODUCT_PLAN_SHEET_INDEX);
 
-      log.info("메인 시트 이름: {}, 제품명 시트 이름: {}",
-          mainSheet.getSheetName(), productNameSheet.getSheetName());
+      log.info("메인 시트 이름: {}, 제품계획 시트 이름: {}",
+          mainSheet.getSheetName(), productPlanSheet.getSheetName());
 
-      // 제품 코드 맵 구성
-      Map<Integer, String> productCodeMap = buildProductCodeMap(mainSheet);
+      // 데이터가 있는 마지막 행 동적 감지
+      int lastDataRow = findLastDataRow(productPlanSheet);
+      log.info("데이터가 있는 마지막 행: {}", lastDataRow + 1); // 1-based for logging
+
+      // 헤더 열의 마지막 인덱스 동적 감지
+      int lastHeaderCol = findLastHeaderColumn(mainSheet);
+      log.info("헤더가 있는 마지막 열: {}", CellReference.convertNumToColString(lastHeaderCol));
+
+      // 제품 코드 헤더 매핑 구성 (4번째 시트의 7번째 행)
+      Map<String, String> productCodeMap = buildProductCodeMap(mainSheet, lastHeaderCol);
       log.info("제품 코드 맵 구성 결과: {} 개의 코드 매핑됨", productCodeMap.size());
 
-      // 날짜 기준 정보를 가져옴 (3번째 시트의 L6 셀)
-      Date baseDate = null;
-      Row headerRow = productNameSheet.getRow(5); // 6번째 행 (인덱스 5)
-      Cell monthDayCell = headerRow != null ? headerRow.getCell(11) : null; // L열 (인덱스 11)
+      // 기준 날짜 가져오기 (3번 시트의 L6 셀)
+      Date baseDate = extractBaseDate(productPlanSheet);
+      log.info("기준 날짜: {}", baseDate);
 
-      if (monthDayCell == null || monthDayCell.getCellType() == CellType.BLANK) {
-        log.warn("L6 셀에서 날짜를 찾을 수 없습니다. 현재 날짜를 사용합니다.");
-        baseDate = new Date();
-      } else {
-        baseDate = DateUtil.getJavaDate(monthDayCell.getNumericCellValue());
-      }
-      log.info("날짜 기준: {}", baseDate);
+      // 효율적인 메모리 사용을 위해 필요한 데이터만 미리 로드
+      List<RowData> validRowData = preloadRowData(productPlanSheet, MIN_START_ROW, lastDataRow);
+      log.info("유효한 데이터 행 수: {}", validRowData.size());
 
-      // 순차적으로 행 처리 (정렬 없이)
-      for (int rowIdx = START_ROW; rowIdx <= END_ROW; rowIdx++) {
-        Row row = mainSheet.getRow(rowIdx);
-        if (row == null) {
-          continue;
-        }
-
-        // 시작 시간, 색상 확인
-        Cell timeCell = row.getCell(DATETIME_COL); // C열
-        Cell colorCell = row.getCell(COLOR_COL); // B열
-
-        // 시작 시간이나 색상이 비어 있으면 더 이상 처리하지 않음
-        boolean timeEmpty = (timeCell == null || timeCell.getCellType() == CellType.BLANK);
-        boolean colorEmpty = (colorCell == null || colorCell.getCellType() == CellType.BLANK);
-
-        if (timeEmpty || colorEmpty) {
-          log.info("행 {}에서 빈 값 발견. 시작시간 빈칸: {}, 색상 빈칸: {}. 이후 행 검색 중단.",
-              rowIdx + 1, timeEmpty, colorEmpty);
-          break;
-        }
-
-        // 시간 데이터 추출 및 LocalDateTime 생성
-        LocalDateTime workDateTime = extractDateTime(timeCell, baseDate);
-
-        if (workDateTime == null) {
-          log.error("행 {}에서 시간 데이터를 추출할 수 없습니다.", rowIdx + 1);
-          errors.add("행 " + (rowIdx + 1) + ": 시간 데이터 추출 실패");
-          continue;
-        }
-
-        // 디버그 로깅
-        log.debug("행 {} 처리 중: 날짜시간={}, 색상={}",
-            rowIdx + 1, workDateTime, getCellValueAsString(colorCell));
-
-        // 제품명은 3번째 시트에서 가져오기
-        Row productNameRow = productNameSheet.getRow(rowIdx);
-        Cell productNameCell = productNameRow != null ?
-            productNameRow.getCell(PRODUCT_NAME_COL) : null; // E열
-
-        // 수량 찾기: I열부터 GJ열까지 확인
-        for (int colIdx = QUANTITY_START_COL; colIdx <= QUANTITY_END_COL; colIdx++) {
-          Cell quantityCell = row.getCell(colIdx);
-
-          // 수량이 있는 경우만 처리
-          if (quantityCell != null && quantityCell.getCellType() != CellType.BLANK) {
-            int quantity = getNumericCellValue(quantityCell);
-            log.debug("행 {}, 열 {}: 수량 {} 발견",
-                rowIdx + 1,
-                CellReference.convertNumToColString(colIdx),
-                quantity);
-
-            if (quantity <= 0) {
-              log.debug("수량이 0 이하임. 건너뜁니다.");
-              continue;
-            }
-
-            try {
-              // 제품 코드 가져오기
-              String productCode = productCodeMap.get(colIdx);
-
-              if (productCode == null || productCode.trim().isEmpty()) {
-                log.warn("행 {}, 열 {}: 제품 코드를 찾을 수 없음",
-                    rowIdx + 1,
-                    CellReference.convertNumToColString(colIdx));
-                errors.add("행 " + (rowIdx + 1) + ", 열 " +
-                    CellReference.convertNumToColString(colIdx) +
-                    ": 해당 위치의 제품 코드를 찾을 수 없습니다.");
-                continue;
-              }
-
-              // CreateRequest 생성
-              CreateRequest request = new CreateRequest();
-
-              // 날짜시간 문자열 변환 (UI 호환성)
-              String formattedDateTime = DateTimeUtils.formatForDisplay(workDateTime);
-
-              // 작업시간 설정
-              request.setWorkDatetime(formattedDateTime);
-              request.setCarModel(carModel);
-              request.setProductColor(getCellValueAsString(colorCell));
-              request.setProductCode(productCode);
-              request.setProductName(getCellValueAsString(productNameCell));
-              request.setQuantity(quantity);
-
-              log.info("작업 로그 생성 요청: 날짜시간={}, 차종={}, 색상={}, 코드={}, 이름={}, 수량={}",
-                  formattedDateTime,
-                  request.getCarModel(),
-                  request.getProductColor(),
-                  request.getProductCode(),
-                  request.getProductName(),
-                  request.getQuantity());
-
-              // 서비스를 통해 데이터 저장
-              Long savedId = workLogService.createWorkLog(request);
-              if (savedId != null) {
-                log.info("작업 로그 생성 성공: ID={}", savedId);
-                successCount++;
-              } else {
-                log.error("작업 로그 생성 실패");
-                errors.add("행 " + (rowIdx + 1) + ", 열 " +
-                    CellReference.convertNumToColString(colIdx) +
-                    ": 저장 실패");
-              }
-            } catch (Exception e) {
-              log.error("작업 로그 처리 중 오류 발생: 행={}, 열={}",
-                  rowIdx + 1,
-                  CellReference.convertNumToColString(colIdx),
-                  e);
-              errors.add("행 " + (rowIdx + 1) + ", 열 " +
-                  CellReference.convertNumToColString(colIdx) +
-                  ": " + e.getMessage());
-            }
+      // 병렬 처리로 성능 향상 (독립적인 행 처리에 적합)
+      validRowData.parallelStream().forEach(rowData -> {
+        try {
+          processRowData(rowData, productCodeMap, baseDate, carModel, successCount, errors);
+        } catch (Exception e) {
+          log.error("행 {} 처리 중 예외 발생", rowData.rowIndex + 1, e);
+          synchronized (errors) {
+            errors.add("행 " + (rowData.rowIndex + 1) + ": " + e.getMessage());
           }
         }
-      }
+      });
 
-      log.info("파일 처리 완료: 성공={}, 오류={}", successCount, errors.size());
+      log.info("파일 처리 완료: 성공={}, 오류={}", successCount.get(), errors.size());
 
       result.put("success", true);
-      result.put("message", successCount + "개의 항목이 성공적으로 처리되었습니다.");
-      result.put("totalProcessed", successCount);
+      result.put("message", successCount.get() + "개의 항목이 성공적으로 처리되었습니다.");
+      result.put("totalProcessed", successCount.get());
       if (!errors.isEmpty()) {
         result.put("errors", errors);
       }
@@ -245,7 +159,319 @@ public class ExcelUploadController {
   }
 
   /**
-   * 엑셀 셀에서 날짜/시간 데이터 추출하여 LocalDateTime 생성
+   * 행 데이터를 저장하는 내부 클래스
+   */
+  private static class RowData {
+    final int rowIndex;
+    final String productCodeKey;
+    final String colorCode;
+    final String productName;
+    final LocalDateTime workDateTime;
+    final Map<Integer, Integer> quantities; // 열 인덱스 -> 수량 매핑
+
+    RowData(int rowIndex, String productCodeKey, String colorCode, String productName,
+        LocalDateTime workDateTime, Map<Integer, Integer> quantities) {
+      this.rowIndex = rowIndex;
+      this.productCodeKey = productCodeKey;
+      this.colorCode = colorCode;
+      this.productName = productName;
+      this.workDateTime = workDateTime;
+      this.quantities = quantities;
+    }
+  }
+
+  /**
+   * 데이터가 포함된 행을 미리 로드하여 효율적으로 처리
+   */
+  private List<RowData> preloadRowData(Sheet sheet, int startRow, int endRow) {
+    List<RowData> result = new ArrayList<>();
+
+    for (int rowIdx = startRow; rowIdx <= endRow; rowIdx++) {
+      Row row = sheet.getRow(rowIdx);
+      if (row == null) {
+        continue;
+      }
+
+      // 필수 셀 확인
+      Cell productCodeCellC = row.getCell(PRODUCT_CODE_COL_C);
+      Cell colorCodeCellD = row.getCell(COLOR_CODE_COL_D);
+      Cell timeCell = row.getCell(TIME_COL_L);
+      Cell productNameCell = row.getCell(PRODUCT_NAME_COL_E);
+
+      // 필수 데이터 검증
+      if (productCodeCellC == null || colorCodeCellD == null || timeCell == null ||
+          isEmptyCell(productCodeCellC) || isEmptyCell(colorCodeCellD) || isEmptyCell(timeCell)) {
+        continue;
+      }
+
+      // 제품 코드 키 추출
+      String productCodeKey = getCellValueAsString(productCodeCellC);
+      if (productCodeKey.isEmpty()) {
+        continue;
+      }
+
+      // 시간 데이터 추출 및 변환
+      LocalDateTime workDateTime = extractDateTime(timeCell, extractBaseDate(sheet));
+      if (workDateTime == null) {
+        log.warn("행 {}: 시간 데이터 추출 실패", rowIdx + 1);
+        continue;
+      }
+
+      // 색상 정보 추출 (오른쪽 3글자)
+      String colorCode = extractColorCode(colorCodeCellD);
+
+      // 제품명 추출
+      String productName = getCellValueAsString(productNameCell);
+
+      // 수량 정보 추출 (H,I,J열)
+      Map<Integer, Integer> quantities = new HashMap<>();
+      quantities.put(QUANTITY_COL_H, getNumericCellValue(row.getCell(QUANTITY_COL_H)));
+      quantities.put(QUANTITY_COL_I, getNumericCellValue(row.getCell(QUANTITY_COL_I)));
+      quantities.put(QUANTITY_COL_J, getNumericCellValue(row.getCell(QUANTITY_COL_J)));
+
+      // 유효한 데이터를 가진 행만 추가
+      result.add(new RowData(rowIdx, productCodeKey, colorCode, productName, workDateTime, quantities));
+    }
+
+    return result;
+  }
+
+  /**
+   * 행 데이터 처리
+   */
+  private void processRowData(RowData rowData, Map<String, String> productCodeMap,
+      Date baseDate, String carModel,
+      AtomicInteger successCount, List<String> errors) {
+
+    // 각 제품 코드에 대해 처리
+    productCodeMap.entrySet().stream()
+        .filter(entry -> rowData.productCodeKey.equals(entry.getKey())) // 코드 키가 일치하는 것만 필터링
+        .forEach(entry -> {
+          String productCode = entry.getValue();
+
+          // 총 수량 계산 (H+I+J 열 합계)
+          int totalQuantity = rowData.quantities.values().stream().mapToInt(Integer::intValue).sum();
+
+          // 수량이 0 이하면 건너뛰기
+          if (totalQuantity <= 0) {
+            return;
+          }
+
+          log.debug("행 {}: 매칭 성공 - 코드키={}, 제품코드={}, 색상={}, 수량={}",
+              rowData.rowIndex + 1, rowData.productCodeKey, productCode, rowData.colorCode, totalQuantity);
+
+          try {
+            // 작업 로그 생성 요청 준비
+            CreateRequest request = new CreateRequest();
+
+            // 날짜시간 문자열 변환 (UI 호환성)
+            String formattedDateTime = DateTimeUtils.formatForDisplay(rowData.workDateTime);
+
+            request.setWorkDatetime(formattedDateTime);
+            request.setCarModel(carModel);
+            request.setProductColor(rowData.colorCode);
+            request.setProductCode(productCode);
+            request.setProductName(rowData.productName);
+            request.setQuantity(totalQuantity);
+
+            // 데이터 저장
+            Long savedId = workLogService.createWorkLog(request);
+            if (savedId != null) {
+              log.debug("작업 로그 생성 성공: ID={}", savedId);
+              successCount.incrementAndGet();
+            } else {
+              log.error("작업 로그 생성 실패: 행={}", rowData.rowIndex + 1);
+              synchronized (errors) {
+                errors.add("행 " + (rowData.rowIndex + 1) + ": 저장 실패");
+              }
+            }
+          } catch (Exception e) {
+            log.error("작업 로그 처리 중 오류 발생: 행={}", rowData.rowIndex + 1, e);
+            synchronized (errors) {
+              errors.add("행 " + (rowData.rowIndex + 1) + ": " + e.getMessage());
+            }
+          }
+        });
+  }
+
+  /**
+   * 데이터가 있는 마지막 행 찾기
+   */
+  private int findLastDataRow(Sheet sheet) {
+    int lastRowNum = sheet.getLastRowNum();
+    int lastDataRowNum = MIN_START_ROW; // 최소한 최소 시작 행은 확인
+
+    // 마지막 행부터 역방향으로 데이터가 있는 행 찾기
+    for (int i = lastRowNum; i >= MIN_START_ROW; i--) {
+      Row row = sheet.getRow(i);
+      if (row != null) {
+        Cell productCodeCell = row.getCell(PRODUCT_CODE_COL_C);
+        Cell colorCodeCell = row.getCell(COLOR_CODE_COL_D);
+        Cell timeCell = row.getCell(TIME_COL_L);
+
+        if (productCodeCell != null && colorCodeCell != null && timeCell != null &&
+            !isEmptyCell(productCodeCell) && !isEmptyCell(colorCodeCell) && !isEmptyCell(timeCell)) {
+          lastDataRowNum = i;
+          break;
+        }
+      }
+    }
+
+    // 안전을 위해 최대 300행까지만 처리
+    return Math.min(lastDataRowNum, 300);
+  }
+
+  /**
+   * 헤더가 있는 마지막 열 찾기
+   */
+  private int findLastHeaderColumn(Sheet sheet) {
+    Row headerRow = sheet.getRow(HEADER_ROW);
+    if (headerRow == null) {
+      return HEADER_START_COL + 20; // 기본값 제공
+    }
+
+    int lastCol = HEADER_START_COL;
+    int maxCol = 300; // 안전을 위한 최대값
+
+    // 헤더 행에서 데이터가 있는 마지막 열 찾기
+    for (int i = HEADER_START_COL; i < maxCol; i++) {
+      Cell cell = headerRow.getCell(i);
+      if (cell == null || isEmptyCell(cell)) {
+        // 연속해서 빈 셀이 5개 이상이면 중단 (이 값은 데이터 특성에 따라 조정 가능)
+        boolean allEmpty = true;
+        for (int j = 1; j <= 5; j++) {
+          Cell nextCell = headerRow.getCell(i + j);
+          if (nextCell != null && !isEmptyCell(nextCell)) {
+            allEmpty = false;
+            break;
+          }
+        }
+
+        if (allEmpty) {
+          break;
+        }
+      } else {
+        lastCol = i;
+      }
+    }
+
+    return lastCol;
+  }
+
+  /**
+   * 색상 코드 추출 - D열에서 오른쪽 3글자 추출
+   *
+   * @param colorCodeCell 색상 코드 셀
+   * @return 추출된 3글자 색상 코드
+   */
+  private String extractColorCode(Cell colorCodeCell) {
+    String fullCode = getCellValueAsString(colorCodeCell);
+    if (fullCode.length() >= 3) {
+      return fullCode.substring(fullCode.length() - 3);
+    }
+    return fullCode;
+  }
+
+  /**
+   * 기준 날짜 추출
+   *
+   * @param planSheet 제품계획 시트 (3번 시트)
+   * @return 기준 날짜
+   */
+  private Date extractBaseDate(Sheet planSheet) {
+    // 캐싱을 위한 정적 맵 - 시트별 날짜 정보 저장
+    Row headerRow = planSheet.getRow(DATE_HEADER_ROW);
+    if (headerRow != null) {
+      Cell dateCell = headerRow.getCell(DATE_COL);
+      if (dateCell != null && dateCell.getCellType() != CellType.BLANK) {
+          return DateUtil.getJavaDate(dateCell.getNumericCellValue());
+      }
+    }
+
+    // 날짜를 찾을 수 없는 경우 현재 날짜 사용
+    log.warn("시트에서 기준 날짜를 찾을 수 없습니다. 현재 날짜를 사용합니다.");
+    return new Date();
+  }
+
+  /**
+   * 제품 코드 매핑 구성 - 4번 시트의 헤더 행에서 제품 코드 정보 추출
+   *
+   * @param mainSheet 메인 시트 (4번 시트)
+   * @param lastHeaderCol 헤더의 마지막 열 인덱스
+   * @return 제품 코드 키 -> 제품 코드 매핑
+   */
+  private Map<String, String> buildProductCodeMap(Sheet mainSheet, int lastHeaderCol) {
+    Map<String, String> productCodeMap = new HashMap<>();
+
+    // 4번 시트의 헤더 행 (7번째 행, 인덱스 6)
+    Row headerRow = mainSheet.getRow(HEADER_ROW);
+    if (headerRow == null) {
+      log.warn("메인 시트에서 헤더 행을 찾을 수 없습니다.");
+      return productCodeMap;
+    }
+
+    // J열부터 동적으로 감지된 마지막 열까지 헤더 검사
+    IntStream.rangeClosed(HEADER_START_COL, lastHeaderCol)
+        .parallel() // 병렬 처리로 성능 향상
+        .forEach(colIdx -> {
+          Cell headerCell = headerRow.getCell(colIdx);
+          if (headerCell != null && !isEmptyCell(headerCell)) {
+            String productCode = getCellValueAsString(headerCell).trim();
+            if (!productCode.isEmpty()) {
+              // 제품 코드 키를 제품 코드 값으로 사용
+              synchronized (productCodeMap) {
+                productCodeMap.put(productCode, productCode);
+              }
+              log.debug("열 {}: 제품 코드 '{}' 추출됨",
+                  CellReference.convertNumToColString(colIdx), productCode);
+            }
+          }
+        });
+
+    return productCodeMap;
+  }
+
+  /**
+   * 셀이 비어있는지 확인 (최적화된 버전)
+   *
+   * @param cell 확인할 셀
+   * @return 비어있으면 true, 아니면 false
+   */
+  private boolean isEmptyCell(Cell cell) {
+    if (cell == null) {
+      return true;
+    }
+
+    switch (cell.getCellType()) {
+      case BLANK:
+        return true;
+      case STRING:
+        return cell.getStringCellValue() == null || cell.getStringCellValue().trim().isEmpty();
+      case NUMERIC:
+        // 0 값은 비어있지 않은 것으로 간주
+        return false;
+      case BOOLEAN:
+        return false;
+      case FORMULA:
+        try {
+          CellType resultType = cell.getCachedFormulaResultType();
+          if (resultType == CellType.BLANK) {
+            return true;
+          } else if (resultType == CellType.STRING) {
+            String value = cell.getStringCellValue();
+            return value == null || value.trim().isEmpty();
+          }
+          return false;
+        } catch (Exception e) {
+          return true;
+        }
+      default:
+        return true;
+    }
+  }
+
+  /**
+   * 엑셀 셀에서 날짜/시간 데이터 추출하여 LocalDateTime 생성 (최적화된 버전)
    *
    * @param timeCell 시간 정보가 있는 셀
    * @param baseDate 기준 날짜
@@ -257,38 +483,33 @@ public class ExcelUploadController {
     }
 
     try {
-      if (DateUtil.isCellDateFormatted(timeCell)) {
-        // 엑셀의 시간값 가져오기
+      // 가장 일반적인 케이스 먼저 처리 (성능 최적화)
+      if (timeCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(timeCell)) {
         double timeValue = timeCell.getNumericCellValue();
-
-        // DateTimeUtils 사용하여 날짜+시간 조합
         return DateTimeUtils.combineExcelDateTime(baseDate, timeValue);
-      } else {
-        // 시간 셀이 날짜 형식이 아닌 경우 (텍스트 등)
-        String cellValue = getCellValueAsString(timeCell).trim();
+      }
 
+      // 수식인 경우 결과 타입 확인
+      if (timeCell.getCellType() == CellType.FORMULA) {
         try {
-          // 1899-12-31T09:34 형식에서 시간만 추출
-          String timeStr = cellValue.contains("T") ?
-              cellValue.substring(cellValue.indexOf("T") + 1) : cellValue;
-
-          // 기준 날짜 사용
-          Calendar calendar = Calendar.getInstance();
-          calendar.setTime(baseDate);
-          LocalDate baseDateAsLocalDate = LocalDate.of(
-              calendar.get(Calendar.YEAR),
-              calendar.get(Calendar.MONTH) + 1,
-              calendar.get(Calendar.DAY_OF_MONTH)
-          );
-
-          LocalTime time = LocalTime.parse(timeStr);
-          return LocalDateTime.of(baseDateAsLocalDate, time);
+          if (timeCell.getCachedFormulaResultType() == CellType.NUMERIC) {
+            double timeValue = timeCell.getNumericCellValue();
+            return DateTimeUtils.combineExcelDateTime(baseDate, timeValue);
+          }
         } catch (Exception e) {
-          log.error("시간 형식 파싱 오류: {}", cellValue, e);
-          // 실패 시 null 반환
-          return null;
+          log.debug("수식 결과 처리 실패: {}", e.getMessage());
         }
       }
+
+      // 문자열인 경우 직접 파싱 시도
+      String cellValue = getCellValueAsString(timeCell).trim();
+      if (!cellValue.isEmpty()) {
+        log.debug("시간 셀 값(텍스트): {}", cellValue);
+        // 여기에 추가 파싱 로직 구현 가능
+      }
+
+      // 모든 변환 시도 실패 시
+      return null;
     } catch (Exception e) {
       log.error("날짜/시간 추출 오류", e);
       return null;
@@ -296,74 +517,7 @@ public class ExcelUploadController {
   }
 
   /**
-   * 제품 코드 맵 구성
-   * 열 인덱스를 키로, 제품 코드를 값으로 하는 맵 생성
-   *
-   * @param sheet 메인 시트
-   * @return 열 인덱스 -> 제품 코드 매핑
-   */
-  private Map<Integer, String> buildProductCodeMap(Sheet sheet) {
-    Map<Integer, String> productCodeMap = new HashMap<>();
-    log.info("제품 코드 맵 구성 시작: I열({})~GJ열({})", QUANTITY_START_COL, QUANTITY_END_COL);
-
-    // 각 열(I~GJ)에 대해 제품 코드 찾기
-    for (int colIdx = QUANTITY_START_COL; colIdx <= QUANTITY_END_COL; colIdx++) {
-      // 샘플 구현: 해당 열의 헤더 행(7행, 인덱스 6)에서 제품 코드 찾기
-      Row headerRow = sheet.getRow(6); // 7행 (인덱스 6)
-      if (headerRow != null) {
-        Cell codeCell = headerRow.getCell(colIdx);
-        if (codeCell != null && codeCell.getCellType() != CellType.BLANK) {
-          String code = getCellValueAsString(codeCell).trim();
-          if (!code.isEmpty()) {
-            log.debug("열 {}: 헤더에서 제품 코드 '{}' 발견",
-                CellReference.convertNumToColString(colIdx), code);
-            productCodeMap.put(colIdx, code);
-            continue;
-          }
-        }
-      }
-
-      // 헤더에서 코드를 찾지 못한 경우 G열의 9~GG행 중에서 해당하는 코드 찾기
-      log.debug("열 {}: 헤더에서 제품 코드를 찾지 못함, G열에서 검색",
-          CellReference.convertNumToColString(colIdx));
-
-      boolean foundCode = false;
-      for (int rowIdx = PRODUCT_CODE_START_ROW; rowIdx <= PRODUCT_CODE_END_ROW; rowIdx++) {
-        Row row = sheet.getRow(rowIdx);
-        if (row == null) continue;
-
-        Cell cell = row.getCell(PRODUCT_CODE_COL); // G열
-        if (cell != null && cell.getCellType() != CellType.BLANK) {
-          String cellValue = getCellValueAsString(cell).trim();
-          if (!cellValue.isEmpty()) {
-            log.debug("G열, 행 {}: 값 '{}'", rowIdx + 1, cellValue);
-
-            // 현재 열에 매핑되는 제품 코드인지 확인하는 로직이 필요함
-            // 임시 구현: 배열 인덱스로 간단히 매핑
-            if ((rowIdx - PRODUCT_CODE_START_ROW) == (colIdx - QUANTITY_START_COL)) {
-              log.info("열 {}: G{}에서 제품 코드 '{}' 매핑됨",
-                  CellReference.convertNumToColString(colIdx),
-                  rowIdx + 1,
-                  cellValue);
-              productCodeMap.put(colIdx, cellValue);
-              foundCode = true;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!foundCode) {
-        log.warn("열 {} ({}): 제품 코드를 찾지 못함",
-            colIdx, CellReference.convertNumToColString(colIdx));
-      }
-    }
-
-    return productCodeMap;
-  }
-
-  /**
-   * 숫자 셀에서 정수 값 추출
+   * 숫자 셀에서 정수 값 추출 (최적화된 버전)
    *
    * @param cell 숫자 셀
    * @return 정수 값
@@ -373,25 +527,44 @@ public class ExcelUploadController {
       return 0;
     }
 
-    if (cell.getCellType() == CellType.NUMERIC) {
-      return (int) cell.getNumericCellValue();
-    } else if (cell.getCellType() == CellType.FORMULA) {
-      try {
+    try {
+      // 가장 일반적인 케이스 먼저 처리 (성능 최적화)
+      if (cell.getCellType() == CellType.NUMERIC) {
         return (int) cell.getNumericCellValue();
-      } catch (Exception e) {
-        log.error("수식 셀 결과를 숫자로 변환 실패", e);
       }
+
+      // 수식인 경우
+      if (cell.getCellType() == CellType.FORMULA) {
+        if (cell.getCachedFormulaResultType() == CellType.NUMERIC) {
+          return (int) cell.getNumericCellValue();
+        }
+      }
+
+      // 문자열이나 다른 타입인 경우 문자열로 변환 후 파싱 시도
+      String strValue = getCellValueAsString(cell).trim();
+      if (!strValue.isEmpty()) {
+        try {
+          return Integer.parseInt(strValue);
+        } catch (NumberFormatException ignored) {
+          // 무시하고 계속 진행
+        }
+
+        // 소수점 형태의 문자열 처리
+        try {
+          return (int) Double.parseDouble(strValue);
+        } catch (NumberFormatException ignored) {
+          // 무시
+        }
+      }
+    } catch (Exception e) {
+      log.debug("숫자 변환 실패: {}", e.getMessage());
     }
 
-    try {
-      return Integer.parseInt(getCellValueAsString(cell).trim());
-    } catch (NumberFormatException e) {
-      return 0;
-    }
+    return 0;
   }
 
   /**
-   * 셀 값을 문자열로 추출
+   * 셀 값을 문자열로 추출 (최적화된 버전)
    *
    * @param cell 엑셀 셀
    * @return 셀 값 문자열
@@ -401,51 +574,57 @@ public class ExcelUploadController {
       return "";
     }
 
+    // 문자열 빌더 사용으로 문자열 연산 최적화
+    StringBuilder result = new StringBuilder();
+
     switch (cell.getCellType()) {
       case STRING:
         return cell.getStringCellValue();
+
       case NUMERIC:
         if (DateUtil.isCellDateFormatted(cell)) {
           return cell.getLocalDateTimeCellValue().toString();
         } else {
-          // 숫자를 문자열로 변환할 때 소수점 제거
           double numValue = cell.getNumericCellValue();
+          // 정수 확인
           if (numValue == Math.floor(numValue)) {
             return String.valueOf((int) numValue);
           } else {
             return String.valueOf(numValue);
           }
         }
+
       case BOOLEAN:
-        return String.valueOf(cell.getBooleanCellValue());
+        return Boolean.toString(cell.getBooleanCellValue());
+
       case FORMULA:
-        // 수식의 결과 타입에 따라 적절히 처리
         try {
           CellType resultType = cell.getCachedFormulaResultType();
           switch (resultType) {
             case NUMERIC:
+              double numValue = cell.getNumericCellValue();
               if (DateUtil.isCellDateFormatted(cell)) {
                 return cell.getLocalDateTimeCellValue().toString();
+              } else if (numValue == Math.floor(numValue)) {
+                return String.valueOf((int) numValue);
               } else {
-                double numValue = cell.getNumericCellValue();
-                if (numValue == Math.floor(numValue)) {
-                  return String.valueOf((int) numValue);
-                } else {
-                  return String.valueOf(numValue);
-                }
+                return String.valueOf(numValue);
               }
             case STRING:
               return cell.getStringCellValue();
             case BOOLEAN:
-              return String.valueOf(cell.getBooleanCellValue());
+              return Boolean.toString(cell.getBooleanCellValue());
             default:
-              // 그 외 타입은 빈 문자열 반환
               return "";
           }
         } catch (Exception e) {
-          log.error("수식 결과 처리 중 오류", e);
-          return "";
+          // 안전하게 원래 수식 반환
+          return cell.getCellFormula();
         }
+
+      case BLANK:
+        return "";
+
       default:
         return "";
     }
