@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 /**
  * 엑셀 파일 업로드 및 처리를 위한 컨트롤러 - 개선된 버전
  * 3번 시트(HDL계획)에서 직접 데이터를 처리하도록 최적화
+ * 4번 시트의 E, F, G, H 열도 추가로 처리
  */
 @Slf4j
 @RestController
@@ -39,6 +40,7 @@ public class ExcelUploadController {
   // 시트 인덱스 상수
   private static final int PRODUCT_PLAN_SHEET_INDEX = 2; // 3번째 시트 (인덱스 2) - HDL계획
   private static final int MAIN_SHEET_INDEX = 3; // 4번째 시트 (인덱스 3) - 메인 시트
+  private static final int QUANTITY_SHEET_INDEX = 3; // 4번째 시트 (인덱스 3) - 수량 시트 (메인 시트와 동일)
 
   // HDL계획 시트(3번 시트)의 데이터 열 상수
   private static final int MIN_START_ROW = 7; // 최소 시작 행 (인덱스 7, 8번째 행부터)
@@ -53,6 +55,26 @@ public class ExcelUploadController {
 
   private static final int TIME_COL_L = 11; // L열 - 시작시간 (인덱스 11)
 
+  // 4번째 시트의 제품 수량 열 상수
+  private static final int COLOR_COL_B = 1; // B열 - 색상 (인덱스 1)
+  private static final int TIME_COL_C = 2; // C열 - 작업 시간 (인덱스 2)
+  private static final int QUANTITY_COL_E = 4; // E열 - 첫 번째 제품 수량 (인덱스 4)
+  private static final int QUANTITY_COL_F = 5; // F열 - 두 번째 제품 수량 (인덱스 5)
+  private static final int QUANTITY_COL_G = 6; // G열 - 세 번째 제품 수량 (인덱스 6)
+  private static final int QUANTITY_COL_H_MAIN = 7; // H열 - 네 번째 제품 수량 (인덱스 7)
+
+  // 제품 코드 상수 (4번째 시트 E, F, G, H 열)
+  private static final String PRODUCT_CODE_E = "77112AR110 SC";
+  private static final String PRODUCT_CODE_F = "78112AR110 SC";
+  private static final String PRODUCT_CODE_G = "77112AR110 SA";
+  private static final String PRODUCT_CODE_H = "78112AR110 SA";
+
+  // 제품 이름 상수 (4번째 시트 E, F, G, H 열)
+  private static final String PRODUCT_NAME_E = "FL CAPA";
+  private static final String PRODUCT_NAME_F = "FR CAPA";
+  private static final String PRODUCT_NAME_G = "FL CUSHION";
+  private static final String PRODUCT_NAME_H = "FR CUSHION";
+
   // 메인 시트(4번 시트)의 헤더 상수
   private static final int HEADER_ROW = 6; // 7번째 행 (인덱스 6)
   private static final int HEADER_START_COL = 8; // I열부터 시작 (인덱스 8)
@@ -64,6 +86,7 @@ public class ExcelUploadController {
   /**
    * 엑셀 파일을 업로드하고 내용을 DB에 저장
    * 개선된 버전: 3번 시트(HDL계획)에서 직접 데이터를 처리하도록 최적화
+   * 4번 시트의 E, F, G, H 열도 추가로 처리
    *
    * @param file 업로드할 엑셀 파일
    * @param carModel 대상 차종
@@ -109,11 +132,13 @@ public class ExcelUploadController {
 
       // 데이터가 있는 마지막 행 동적 감지
       int lastDataRow = findLastDataRow(productPlanSheet);
-      log.info("데이터가 있는 마지막 행: {}", lastDataRow + 1); // 1-based for logging
+      log.info("데이터가 있는 마지막 행: {} (총 {}행)",
+          lastDataRow + 1, lastDataRow - MIN_START_ROW + 1);
 
       // 헤더 열의 마지막 인덱스 동적 감지
       int lastHeaderCol = findLastHeaderColumn(mainSheet);
-      log.info("헤더가 있는 마지막 열: {}", CellReference.convertNumToColString(lastHeaderCol));
+      log.info("헤더가 있는 마지막 열: {} ({})",
+          lastHeaderCol + 1, CellReference.convertNumToColString(lastHeaderCol));
 
       // 제품 코드 헤더 매핑 구성 (4번째 시트의 7번째 행)
       Map<String, String> productCodeMap = buildProductCodeMap(mainSheet, lastHeaderCol);
@@ -123,9 +148,13 @@ public class ExcelUploadController {
       Date baseDate = extractBaseDate(productPlanSheet);
       log.info("기준 날짜: {}", baseDate);
 
+      // 1. 3번 시트(HDL계획) 데이터 처리 시작
+      log.info("3번 시트 데이터 처리 시작...");
+
       // 효율적인 메모리 사용을 위해 필요한 데이터만 미리 로드
       List<RowData> validRowData = preloadRowData(productPlanSheet, MIN_START_ROW, lastDataRow);
-      log.info("유효한 데이터 행 수: {}", validRowData.size());
+      log.info("유효한 데이터 행 수: {}, 범위: {} ~ {}",
+          validRowData.size(), MIN_START_ROW + 1, lastDataRow + 1);
 
       // 병렬 처리로 성능 향상 (독립적인 행 처리에 적합)
       validRowData.parallelStream().forEach(rowData -> {
@@ -139,11 +168,27 @@ public class ExcelUploadController {
         }
       });
 
-      log.info("파일 처리 완료: 성공={}, 오류={}", successCount.get(), errors.size());
+      // 중간 결과 로깅
+      int hdl_plan_success = successCount.get();
+      log.info("3번 시트 처리 완료: 성공 항목 {}개", hdl_plan_success);
+
+      // 2. 4번 시트 E, F, G, H 열 제품 수량 처리
+      log.info("4번 시트 E, F, G, H 열 제품 수량 처리 시작...");
+      int quantityRowsProcessed = processQuantityData(mainSheet, MIN_START_ROW, lastDataRow,
+          baseDate, carModel, successCount, errors);
+
+      int main_sheet_success = successCount.get() - hdl_plan_success;
+      log.info("4번 시트 처리 완료: {}개 행 중 {}개 항목 성공",
+          quantityRowsProcessed, main_sheet_success);
+
+      log.info("파일 처리 완료: 성공={} 항목 (3번 시트: {}, 4번 시트: {}), 오류={} 항목",
+          successCount.get(), hdl_plan_success, main_sheet_success, errors.size());
 
       result.put("success", true);
       result.put("message", successCount.get() + "개의 항목이 성공적으로 처리되었습니다.");
       result.put("totalProcessed", successCount.get());
+      result.put("sheet3Processed", hdl_plan_success);
+      result.put("sheet4Processed", main_sheet_success);
       if (!errors.isEmpty()) {
         result.put("errors", errors);
       }
@@ -168,6 +213,7 @@ public class ExcelUploadController {
     final String productName;
     final LocalDateTime workDateTime;
     final Map<Integer, Integer> quantities; // 열 인덱스 -> 수량 매핑
+    int successCount = 0; // 이 행에서 성공한 처리 수
 
     RowData(int rowIndex, String productCodeKey, String colorCode, String productName,
         LocalDateTime workDateTime, Map<Integer, Integer> quantities) {
@@ -279,6 +325,7 @@ public class ExcelUploadController {
             if (savedId != null) {
               log.debug("작업 로그 생성 성공: ID={}", savedId);
               successCount.incrementAndGet();
+              rowData.successCount++; // 행 단위 성공 카운트 증가
             } else {
               log.error("작업 로그 생성 실패: 행={}", rowData.rowIndex + 1);
               synchronized (errors) {
@@ -295,11 +342,165 @@ public class ExcelUploadController {
   }
 
   /**
+   * 4번 시트의 E, F, G, H 열의 제품 수량 데이터 처리
+   *
+   * @param sheet 수량 시트 (4번 시트)
+   * @param startRow 시작 행
+   * @param endRow 종료 행
+   * @param baseDate 기준 날짜
+   * @param carModel 차종
+   * @param successCount 성공 카운터
+   * @param errors 오류 목록
+   * @return 처리된 행 수
+   */
+  private int processQuantityData(Sheet sheet, int startRow, int endRow, Date baseDate,
+      String carModel, AtomicInteger successCount, List<String> errors) {
+
+    // 처리한 행 수 카운트
+    int processedRows = 0;
+    int successRows = 0;
+
+    // 각 행 처리
+    for (int rowIdx = startRow; rowIdx <= endRow; rowIdx++) {
+      Row row = sheet.getRow(rowIdx);
+      if (row == null) {
+        continue;
+      }
+
+      // 시간과 색상 셀 가져오기
+      Cell timeCell = row.getCell(TIME_COL_C);
+      Cell colorCell = row.getCell(COLOR_COL_B);
+
+      // 필수 데이터 확인
+      if (timeCell == null || colorCell == null ||
+          isEmptyCell(timeCell) || isEmptyCell(colorCell)) {
+        continue;
+      }
+
+      // 시간 데이터 추출
+      LocalDateTime workDateTime = extractDateTime(timeCell, baseDate);
+      if (workDateTime == null) {
+        log.warn("행 {}: 시간 데이터 추출 실패", rowIdx + 1);
+        continue;
+      }
+
+      // 색상 코드 가져오기
+      String colorCode = getCellValueAsString(colorCell).trim();
+      if (colorCode.isEmpty()) {
+        continue;
+      }
+
+      // 이 행의 처리 성공 여부
+      boolean rowSuccess = false;
+
+      // E, F, G, H 열 처리
+      rowSuccess |= processQuantityCell(row, QUANTITY_COL_E, PRODUCT_CODE_E, PRODUCT_NAME_E,
+          colorCode, workDateTime, carModel, successCount, errors, rowIdx);
+
+      rowSuccess |= processQuantityCell(row, QUANTITY_COL_F, PRODUCT_CODE_F, PRODUCT_NAME_F,
+          colorCode, workDateTime, carModel, successCount, errors, rowIdx);
+
+      rowSuccess |= processQuantityCell(row, QUANTITY_COL_G, PRODUCT_CODE_G, PRODUCT_NAME_G,
+          colorCode, workDateTime, carModel, successCount, errors, rowIdx);
+
+      rowSuccess |= processQuantityCell(row, QUANTITY_COL_H_MAIN, PRODUCT_CODE_H, PRODUCT_NAME_H,
+          colorCode, workDateTime, carModel, successCount, errors, rowIdx);
+
+      processedRows++;
+      if (rowSuccess) {
+        successRows++;
+      }
+    }
+
+    log.info("4번 시트 제품 수량 처리 결과: {}개 행 중 {}개 행 성공 ({}%)",
+        processedRows, successRows,
+        processedRows > 0 ? (successRows * 100 / processedRows) : 0);
+
+    return processedRows;
+  }
+
+  /**
+   * 제품 수량 셀 처리
+   *
+   * @param row 현재 행
+   * @param colIdx 열 인덱스
+   * @param productCode 제품 코드
+   * @param productName 제품 이름
+   * @param colorCode 색상 코드
+   * @param workDateTime 작업 시간
+   * @param carModel 차종
+   * @param successCount 성공 카운터
+   * @param errors 오류 목록
+   * @param rowIdx 행 인덱스 (오류 메시지용)
+   * @return 처리 성공 여부
+   */
+  private boolean processQuantityCell(Row row, int colIdx, String productCode, String productName,
+      String colorCode, LocalDateTime workDateTime, String carModel,
+      AtomicInteger successCount, List<String> errors, int rowIdx) {
+
+    Cell quantityCell = row.getCell(colIdx);
+    if (quantityCell == null || isEmptyCell(quantityCell)) {
+      return false;
+    }
+
+    int quantity = getNumericCellValue(quantityCell);
+    if (quantity <= 0) {
+      return false;
+    }
+
+    try {
+      // 작업 로그 생성 요청 준비
+      CreateRequest request = new CreateRequest();
+
+      // 날짜시간 문자열 변환 (UI 호환성)
+      String formattedDateTime = DateTimeUtils.formatForDisplay(workDateTime);
+
+      request.setWorkDatetime(formattedDateTime);
+      request.setCarModel(carModel);
+      request.setProductColor(colorCode);
+      request.setProductCode(productCode);
+      request.setProductName(productName);
+      request.setQuantity(quantity);
+
+      // 로그
+      log.debug("4번시트 작업 로그: 행={}, 열={}, 제품코드={}, 제품명={}, 색상={}, 수량={}",
+          rowIdx + 1, CellReference.convertNumToColString(colIdx),
+          productCode, productName, colorCode, quantity);
+
+      // 데이터 저장
+      Long savedId = workLogService.createWorkLog(request);
+      if (savedId != null) {
+        log.debug("작업 로그 생성 성공: 행={}, 열={}, ID={}",
+            rowIdx + 1, CellReference.convertNumToColString(colIdx), savedId);
+        successCount.incrementAndGet();
+        return true;
+      } else {
+        log.error("작업 로그 생성 실패: 행={}, 열={}",
+            rowIdx + 1, CellReference.convertNumToColString(colIdx));
+        synchronized (errors) {
+          errors.add(String.format("행 %d, 열 %s: 저장 실패",
+              rowIdx + 1, CellReference.convertNumToColString(colIdx)));
+        }
+        return false;
+      }
+    } catch (Exception e) {
+      log.error("작업 로그 처리 중 오류 발생: 행={}, 열={}",
+          rowIdx + 1, CellReference.convertNumToColString(colIdx), e);
+      synchronized (errors) {
+        errors.add(String.format("행 %d, 열 %s: %s",
+            rowIdx + 1, CellReference.convertNumToColString(colIdx), e.getMessage()));
+      }
+      return false;
+    }
+  }
+
+  /**
    * 데이터가 있는 마지막 행 찾기
    */
   private int findLastDataRow(Sheet sheet) {
     int lastRowNum = sheet.getLastRowNum();
     int lastDataRowNum = MIN_START_ROW; // 최소한 최소 시작 행은 확인
+    log.debug("시트의 물리적 마지막 행: {}", lastRowNum + 1);
 
     // 마지막 행부터 역방향으로 데이터가 있는 행 찾기
     for (int i = lastRowNum; i >= MIN_START_ROW; i--) {
@@ -312,6 +513,7 @@ public class ExcelUploadController {
         if (productCodeCell != null && colorCodeCell != null && timeCell != null &&
             !isEmptyCell(productCodeCell) && !isEmptyCell(colorCodeCell) && !isEmptyCell(timeCell)) {
           lastDataRowNum = i;
+          log.debug("데이터가 있는 마지막 행 발견: {}", lastDataRowNum + 1);
           break;
         }
       }
@@ -327,35 +529,45 @@ public class ExcelUploadController {
   private int findLastHeaderColumn(Sheet sheet) {
     Row headerRow = sheet.getRow(HEADER_ROW);
     if (headerRow == null) {
+      log.warn("헤더 행(7번째 행)을 찾을 수 없음. 기본값 사용");
       return HEADER_START_COL + 20; // 기본값 제공
     }
 
     int lastCol = HEADER_START_COL;
-    int maxCol = 300; // 안전을 위한 최대값
+    int maxCol = Math.min(headerRow.getLastCellNum(), 300); // 안전을 위한 최대값
+    int emptyCount = 0; // 빈 열 연속 카운트
+
+    log.debug("헤더 행의 물리적 마지막 열: {} ({})",
+        headerRow.getLastCellNum(),
+        CellReference.convertNumToColString(headerRow.getLastCellNum() - 1));
 
     // 헤더 행에서 데이터가 있는 마지막 열 찾기
     for (int i = HEADER_START_COL; i < maxCol; i++) {
       Cell cell = headerRow.getCell(i);
       if (cell == null || isEmptyCell(cell)) {
-        // 연속해서 빈 셀이 5개 이상이면 중단 (이 값은 데이터 특성에 따라 조정 가능)
-        boolean allEmpty = true;
-        for (int j = 1; j <= 5; j++) {
-          Cell nextCell = headerRow.getCell(i + j);
-          if (nextCell != null && !isEmptyCell(nextCell)) {
-            allEmpty = false;
-            break;
-          }
-        }
-
-        if (allEmpty) {
+        emptyCount++;
+        // 연속해서 빈 셀이 5개 이상이면 중단
+        if (emptyCount >= 5) {
+          log.debug("5개 이상의 빈 열이 연속됨. 검색 중단");
           break;
         }
       } else {
         lastCol = i;
+        emptyCount = 0; // 데이터가 있는 열을 찾았으므로 카운터 리셋
+        log.debug("헤더 데이터가 있는 열 발견: {} ({}), 값: {}",
+            i + 1, CellReference.convertNumToColString(i), getCellValueAsString(cell));
       }
     }
 
-    return lastCol;
+    // 안전을 위해 200열까지만 처리
+    int maxAllowedCol = Math.min(lastCol, 200);
+    if (maxAllowedCol < lastCol) {
+      log.info("안전을 위해 최대 열 제한 적용: {} → {}",
+          CellReference.convertNumToColString(lastCol),
+          CellReference.convertNumToColString(maxAllowedCol));
+    }
+
+    return maxAllowedCol;
   }
 
   /**
@@ -373,7 +585,7 @@ public class ExcelUploadController {
   }
 
   /**
-   * 기준 날짜 추출
+   * 기준 날짜 추출 - 개선된 버전
    *
    * @param planSheet 제품계획 시트 (3번 시트)
    * @return 기준 날짜
@@ -410,7 +622,7 @@ public class ExcelUploadController {
       return productCodeMap;
     }
 
-    // J열부터 동적으로 감지된 마지막 열까지 헤더 검사
+    // I열부터 동적으로 감지된 마지막 열까지 헤더 검사
     IntStream.rangeClosed(HEADER_START_COL, lastHeaderCol)
         .parallel() // 병렬 처리로 성능 향상
         .forEach(colIdx -> {
@@ -471,7 +683,7 @@ public class ExcelUploadController {
   }
 
   /**
-   * 엑셀 셀에서 날짜/시간 데이터 추출하여 LocalDateTime 생성 (최적화된 버전)
+   * 엑셀 셀에서 날짜/시간 데이터 추출하여 LocalDateTime 생성
    *
    * @param timeCell 시간 정보가 있는 셀
    * @param baseDate 기준 날짜
@@ -497,7 +709,7 @@ public class ExcelUploadController {
             return DateTimeUtils.combineExcelDateTime(baseDate, timeValue);
           }
         } catch (Exception e) {
-          log.debug("수식 결과 처리 실패: {}", e.getMessage());
+          log.debug("  -> 수식 결과 처리 실패: {}", e.getMessage());
         }
       }
 
@@ -505,10 +717,10 @@ public class ExcelUploadController {
       String cellValue = getCellValueAsString(timeCell).trim();
       if (!cellValue.isEmpty()) {
         log.debug("시간 셀 값(텍스트): {}", cellValue);
-        // 여기에 추가 파싱 로직 구현 가능
       }
 
       // 모든 변환 시도 실패 시
+      log.warn("시간 데이터를 추출할 수 없습니다. 셀 값: '{}'", cellValue);
       return null;
     } catch (Exception e) {
       log.error("날짜/시간 추출 오류", e);
