@@ -155,8 +155,11 @@ function toggleStatusDropdown() {
 function setupButtonListeners() {
   // 날짜 초기화 버튼
   document.getElementById('btnResetDate').addEventListener('click', function() {
-    selectedDate = null;
-    document.getElementById('btnDate').innerHTML = '<i class="bi bi-calendar"></i> 날짜 검색';
+    // 초기값은 현재 날짜
+    selectedDate = Utils.formatDateForSearch(new Date());
+    document.getElementById('btnDate').innerHTML = '<i class="bi bi-calendar"></i> '+ selectedDate;
+
+    // 현재 날짜로 API 호출
     API.fetchWorkLogsData();
   });
 

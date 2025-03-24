@@ -134,8 +134,15 @@ public class WorkLogService {
    * @return 해당 날짜의 작업 로그 목록
    */
   public Map<String, Object> getWorkLogsByExactDate(LocalDate date) {
+    // 날짜 검증
+    LocalDate validDate = date;
+    if (validDate == null) {
+      validDate = LocalDate.now();
+      log.warn("서비스에서 날짜가 null입니다. 현재 날짜로 대체: {}", validDate);
+    }
+
     // 날짜 범위 설정
-    LocalDateTime[] range = DateTimeUtils.getDateTimeRange(date);
+    LocalDateTime[] range = DateTimeUtils.getDateTimeRange(validDate);
 
     // 해당 날짜의 시작과 끝 시간으로 조회
     return getWorkLogs(null, null, null, range[0], range[1], "wl_work_datetime", "ASC");

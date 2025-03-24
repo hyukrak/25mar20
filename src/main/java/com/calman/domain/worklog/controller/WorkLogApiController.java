@@ -3,6 +3,7 @@ package com.calman.domain.worklog.controller;
 import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.service.WorkLogService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.Map;
 /**
  * 작업 로그 REST API 컨트롤러
  */
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -87,7 +89,17 @@ public class WorkLogApiController {
   public ResponseEntity<Map<String, Object>> getWorkLogsByDate(
       @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date
   ) {
-    Map<String, Object> result = workLogService.getWorkLogsByExactDate(date);
+
+    // 날짜 파라미터 검증
+    LocalDate validDate = date;
+    if (validDate == null) {
+      // 날짜가 null이면 현재 날짜 사용
+      validDate = LocalDate.now();
+      log.warn("날짜 파라미터가 null입니다. 현재 날짜로 대체: {}", validDate);
+    }
+
+    // 유효한 날짜로 조회
+    Map<String, Object> result = workLogService.getWorkLogsByExactDate(validDate);
     return ResponseEntity.ok(result);
   }
 

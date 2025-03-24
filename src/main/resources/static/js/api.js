@@ -73,16 +73,20 @@ const API = {
     loading = true;
     document.getElementById('loading').style.display = 'block';
 
-    // YY.MM.DD 형식의 날짜 확인
-    if (!Utils.isShortDateFormat(date)) {
+    // 날짜 파라미터 검증
+    let validDate;
+
+    if (!date || !Utils.isShortDateFormat(date)) {
+      // 유효하지 않은 날짜 형식이면 현재 날짜 사용
+      validDate = Utils.formatDateForSearch(new Date());
+      console.warn('유효하지 않은 날짜 형식. 현재 날짜로 대체:', validDate);
       UI.showToast('날짜 형식이 올바르지 않습니다 (YY.MM.DD 형식이어야 합니다).', 'warning');
-      loading = false;
-      document.getElementById('loading').style.display = 'none';
-      return Promise.reject(new Error('Invalid date format'));
+    } else {
+      validDate = date;
     }
 
     // 날짜 형식 변환 (YY.MM.DD -> YYYY-MM-DD)
-    const isoDate = Utils.convertToISODate(date);
+    const isoDate = Utils.convertToISODate(validDate);
 
     // API 호출 (정렬 방향 기본값 ASC 적용)
     const params = new URLSearchParams();
@@ -162,13 +166,18 @@ const API = {
     if (sortField) params.append('sortField', sortField);
     params.append('sortDirection', sortDirection || 'ASC');
 
-    // 날짜 필터가 있으면 추가
-    if (selectedDate && Utils.isShortDateFormat(selectedDate)) {
-      // 검색용 날짜 변환 (YY.MM.DD -> YYYY-MM-DD)
-      // const isoDate = Utils.convertToISODate(selectedDate);
-
-      // date/{date} 형식의 API를 사용
-      return this.fetchWorkLogsByDate(selectedDate);
+    // 날짜 필터 검증
+    if (selectedDate) {
+      if (Utils.isShortDateFormat(selectedDate)) {
+        // 유효한 형식이면 날짜 API 사용
+        return this.fetchWorkLogsByDate(selectedDate);
+      } else {
+        // 유효하지 않은 형식이면 로그 기록하고 현재 날짜로 대체
+        console.warn('유효하지 않은 selectedDate 형식:', selectedDate);
+        UI.showToast('날짜 형식이 올바르지 않습니다 (YY.MM.DD 형식이어야 합니다).', 'warning');
+        selectedDate = Utils.formatDateForSearch(new Date());
+        return this.fetchWorkLogsByDate(selectedDate);
+      }
     }
 
     // API 호출
