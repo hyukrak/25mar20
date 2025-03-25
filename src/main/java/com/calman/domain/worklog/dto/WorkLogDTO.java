@@ -1,6 +1,6 @@
 package com.calman.domain.worklog.dto;
 
-import com.calman.DateTimeUtils;
+import com.calman.global.util.DateTimeUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +26,7 @@ public class WorkLogDTO {
   private String productCode;
   private String productName;
   private Integer quantity;
+  private String completedBy;
 
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime completedAt;
@@ -95,7 +96,9 @@ public class WorkLogDTO {
     private String productCode;
     private String productName;
     private Integer quantity;
+    private String completedBy;
     private boolean completed;
+
 
     // 화면 표시용 문자열 리턴 추가
     public String getFormattedWorkDatetime() {
@@ -119,9 +122,11 @@ public class WorkLogDTO {
     private String productName;
     private Integer quantity;
 
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime completedAt;
 
+    private String completedBy;
     private boolean completed;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -144,10 +149,12 @@ public class WorkLogDTO {
       this.productName = productName;
       this.quantity = quantity;
       this.completedAt = completedAt;
+      this.completedBy = completedBy;
       this.completed = (completedAt != null);
       this.createdAt = createdAt;
     }
   }
+
 
   // 상태 업데이트 요청
   @Data

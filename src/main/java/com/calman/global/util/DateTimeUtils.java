@@ -1,4 +1,4 @@
-package com.calman;
+package com.calman.global.util;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

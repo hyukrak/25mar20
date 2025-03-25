@@ -1,6 +1,7 @@
 package com.calman.domain.worklog.service;
 
-import com.calman.DateTimeUtils;
+import com.calman.global.config.sse.SseService;
+import com.calman.global.util.DateTimeUtils;
 import com.calman.domain.worklog.dto.WorkLogDTO;
 import com.calman.domain.worklog.mapper.WorkLogMapper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.Map;
 public class WorkLogService {
 
   private final WorkLogMapper workLogMapper;
+  private final SseService sseService;
 
   /**
    * 새 작업 로그 생성
@@ -51,6 +53,8 @@ public class WorkLogService {
         .build();
 
     workLogMapper.insertWorkLog(workLog);
+    sseService.publishWorkLogCreated(workLog);  // SSE 이벤트 pub
+
     return workLog.getId();
   }
 
@@ -194,19 +198,54 @@ public class WorkLogService {
     existingWorkLog.setProductName(request.getProductName());
     existingWorkLog.setQuantity(request.getQuantity());
 
-    return workLogMapper.updateWorkLog(existingWorkLog) > 0;
+    boolean updated = workLogMapper.updateWorkLog(existingWorkLog) > 0;
+
+    // 업데이트 성공 시 SSE 이벤트 발행
+    if (updated) {
+      // 최신 데이터로 다시 조회 (DB의 변경된 값을 확실히 포함하기 위해)
+      WorkLogDTO updatedWorkLog = workLogMapper.selectWorkLogById(id);
+      sseService.publishWorkLogUpdated(updatedWorkLog);
+      log.debug("작업 로그 업데이트 이벤트 발행: ID={}", id);
+    }
+
+    return updated;
   }
 
   /**
    * 작업 완료 상태 업데이트
    * @param id 작업 로그 ID
    * @param completed 완료 여부
+   * @param completedBy 완료 처리한 클라이언트/디바이스 ID
+   * @return 성공 여부
+   */
+  @Transactional
+  public boolean updateWorkLogCompletionStatus(Long id, boolean completed, String completedBy) {
+    LocalDateTime completedAt = completed ? LocalDateTime.now() : null;
+    log.debug("작업 로그 상태 업데이트: ID={}, 완료={}, 클라이언트={}", id, completed, completedBy);
+
+    boolean updated = workLogMapper.updateWorkLogCompletionStatusWithBy(id, completedAt, completedBy) > 0;
+
+    // 업데이트 성공 시 SSE 이벤트 발행
+    if (updated) {
+      // 최신 데이터로 다시 조회
+      WorkLogDTO updatedWorkLog = workLogMapper.selectWorkLogById(id);
+      sseService.publishWorkLogUpdated(updatedWorkLog);
+      log.debug("작업 로그 상태 변경 이벤트 발행: ID={}, 완료={}, 클라이언트={}", id, completed, completedBy);
+    }
+
+    return updated;
+  }
+
+  /**
+   * 작업 완료 상태 업데이트 (deprecated)
+   * @param id 작업 로그 ID
+   * @param completed 완료 여부
    * @return 성공 여부
    */
   @Transactional
   public boolean updateWorkLogCompletionStatus(Long id, boolean completed) {
-    LocalDateTime completedAt = completed ? LocalDateTime.now() : null;
-    return workLogMapper.updateWorkLogCompletionStatus(id, completedAt) > 0;
+    // 클라이언트 ID를 "unknown"으로 설정하여 새 메서드 호출
+    return updateWorkLogCompletionStatus(id, completed, "unknown");
   }
 
   /**
@@ -216,11 +255,19 @@ public class WorkLogService {
    */
   @Transactional
   public boolean deleteWorkLog(Long id) {
-    return workLogMapper.deleteWorkLog(id) > 0;
+    boolean deleted = workLogMapper.deleteWorkLog(id) > 0;
+
+    // 삭제 성공 시 SSE 이벤트 발행
+    if (deleted) {
+      sseService.publishWorkLogDeleted(id);
+      log.debug("작업 로그 삭제 이벤트 발행: ID={}", id);
+    }
+
+    return deleted;
   }
 
   /**
-   * 날짜 범위로 작업 로그 조회 (개선된 버전)
+   * 날짜 범위로 작업 로그 조회
    * @param startDate 시작 날짜
    * @param endDate 종료 날짜
    * @return 작업 로그 목록

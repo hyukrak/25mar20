@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS work_logs (
     wl_product_code  TEXT(20) NOT NULL,                             --  제품 코드
     wl_product_name  TEXT(50) NOT NULL,                             --  제품 이름
     wl_quantity INTEGER DEFAULT 0 NOT NULL,                         --  '수량',
-    wl_completed_at DATETIME NULL,                                  --  '완료 시간 - 완료되지 않은 경우 NULL',
-    wl_created_at DATETIME DEFAULT (datetime('now', 'localtime'))   --  '생성일 - 시스템 자동 기록',
+    wl_completed_by TEXT(20) NULL,                                  --  '완료 주체' - 완료되지 않은 경우 NULL,
+    wl_completed_at DATETIME NULL,                                  --  '완료 시간' - 완료되지 않은 경우 NULL,
+    wl_created_at DATETIME DEFAULT (datetime('now', 'localtime'))   --  '생성일' - 시스템 자동 기록,
     );
 
 -- 인덱스 생성

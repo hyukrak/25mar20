@@ -83,7 +83,6 @@ const Modal = {
             const minute = parseInt(dateParts[5]);
 
             const date = new Date(year, month, day, hour, minute);
-            console.log('날짜 설정:', date);
             datePickerInstance.setDate(date, true);
           }
         } catch (e) {

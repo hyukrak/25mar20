@@ -3,6 +3,23 @@
  * 서버와의 통신을 담당하는 함수들을 포함합니다.
  */
 
+// 클라이언트 ID 생성 (페이지 로드마다 고유한 ID 생성)
+const generateClientId = function() {
+  // 기기명 + 랜덤 ID + 타임스탬프 조합으로 생성
+  const deviceType = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      ? 'mobile'
+      : 'desktop';
+  const randomId = Math.random().toString(36).substring(2, 10);
+  const timestamp = new Date().getTime();
+  return `${deviceType}-${randomId}-${timestamp}`;
+};
+
+// 현재 클라이언트 ID 저장 (세션 단위로 유지)
+const CLIENT_ID = sessionStorage.getItem('clientId') || generateClientId();
+sessionStorage.setItem('clientId', CLIENT_ID);
+
+console.log(`현재 클라이언트 ID: ${CLIENT_ID}`);
+
 // API 네임스페이스 생성
 const API = {
   /**
@@ -99,8 +116,6 @@ const API = {
     // 상태 필터 추가
     if (status) params.append('status', status);
 
-    console.log(`fetchWorkLogsByDate: date=${isoDate}, status=${status}, sort=${sortField} ${sortDirection}`);
-
     return fetch(`/api/worklogs/date/${isoDate}?${params.toString()}`)
     .then(response => {
       if (!response.ok) {
@@ -174,8 +189,6 @@ const API = {
     if (status) params.append('status', status);
     if (sortField) params.append('sortField', sortField);
     params.append('sortDirection', sortDirection || 'ASC');
-
-    console.log(`fetchFilteredWorkLogs: status=${status}, sort=${sortField} ${sortDirection}`);
 
     // 날짜 필터 검증
     if (selectedDate) {
@@ -308,6 +321,7 @@ const API = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'X-Client-ID': CLIENT_ID // 클라이언트 ID 헤더
       },
       body: JSON.stringify(workLog)
     })
@@ -352,6 +366,7 @@ const API = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'X-Client-ID': CLIENT_ID // 클라이언트 ID 헤더
       },
       body: JSON.stringify({ completed: completed })
     })
@@ -373,6 +388,7 @@ const API = {
       const index = workLogData.findIndex(item => item.id == id);
       if (index !== -1) {
         workLogData[index].completedAt = completed ? new Date().toISOString() : null;
+        workLogData[index].completedBy = CLIENT_ID; // 클라이언트 ID 추가
         UI.renderWorkLogData(workLogData);
         UI.showToast(`작업이 ${completed ? '완료' : '미완료'} 상태로 변경되었습니다.`, 'success');
       }

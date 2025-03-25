@@ -174,14 +174,21 @@ public class WorkLogApiController {
    *
    * @param id 수정할 작업 로그 ID
    * @param request 상태 업데이트 요청 정보
+   * @param clientId 클라이언트/디바이스 식별자 (헤더 x--id 에서 추출)
    * @return 수정 결과
    */
   @PutMapping("/worklogs/{id}/status")
   public ResponseEntity<Map<String, Object>> updateWorkLogStatus(
       @PathVariable Long id,
-      @RequestBody WorkLogDTO.StatusUpdateRequest request
+      @RequestBody WorkLogDTO.StatusUpdateRequest request,
+      @RequestHeader(value = "X-Client-ID", required = false) String clientId
   ) {
-    boolean updated = workLogService.updateWorkLogCompletionStatus(id, request.isCompleted());
+    // 클라이언트 ID가 없으면 "unknown"으로 기본값 설정
+    String actualClientId = (clientId != null && !clientId.isEmpty()) ? clientId : "unknown";
+
+    log.debug("작업 로그 상태 변경 요청: ID={}, 완료={}, 클라이언트={}", id, request.isCompleted(), actualClientId);
+
+    boolean updated = workLogService.updateWorkLogCompletionStatus(id, request.isCompleted(), actualClientId);
 
     Map<String, Object> response = new HashMap<>();
     response.put("success", updated);
@@ -190,12 +197,14 @@ public class WorkLogApiController {
       String message = request.isCompleted() ?
           "작업이 완료 상태로 변경되었습니다." : "작업이 미완료 상태로 변경되었습니다.";
       response.put("message", message);
+      response.put("clientId", actualClientId); // 응답에 클라이언트 ID 포함 (디버깅용)
       return ResponseEntity.ok(response);
     } else {
       response.put("message", "작업 로그 상태 변경에 실패했습니다.");
       return ResponseEntity.badRequest().body(response);
     }
   }
+
 
   /**
    * 작업 로그 삭제

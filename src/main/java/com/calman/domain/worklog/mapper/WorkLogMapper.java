@@ -96,6 +96,19 @@ public interface WorkLogMapper {
   List<WorkLogDTO> selectWorkLogsByUserId(@Param("userId") Long userId);
 
   /**
+   * 작업 로그 완료 상태 업데이트 (클라이언트 ID 포함)
+   * @param id 작업 로그 ID
+   * @param completedAt 완료 시간 (미완료인 경우 null)
+   * @param completedBy 완료 처리한 클라이언트/디바이스 ID
+   * @return 영향받은 행 수
+   */
+  int updateWorkLogCompletionStatusWithBy(
+      @Param("id") Long id,
+      @Param("completedAt") LocalDateTime completedAt,
+      @Param("completedBy") String completedBy
+  );
+
+  /**
    * 작업 로그 완료 상태 업데이트
    * @param id 작업 로그 ID
    * @param completedAt 완료 시간 (미완료인 경우 null)

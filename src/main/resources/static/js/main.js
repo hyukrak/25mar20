@@ -74,6 +74,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 오늘 날짜 데이터로 필터링
   UI.filterDataByDate(formattedToday);
+
+  // SSE 연결 초기화
+  if (typeof SSE !== 'undefined' && SSE.init) {
+    SSE.init();
+  } else {
+    console.warn('SSE 모듈을 찾을 수 없습니다.');
+  }
 });
 
 /**
