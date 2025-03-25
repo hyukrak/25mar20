@@ -83,13 +83,18 @@ public class WorkLogApiController {
    * 특정 날짜의 작업 로그 조회
    *
    * @param date 조회할 날짜 (YYYY-MM-DD)
+   * @param status 상태 필터 ('completed', 'incomplete', null)
+   * @param sortField 정렬 필드
+   * @param sortDirection 정렬 방향 ('ASC' 또는 'DESC')
    * @return 해당 날짜의 작업 로그 목록
    */
   @GetMapping("/worklogs/date/{date}")
   public ResponseEntity<Map<String, Object>> getWorkLogsByDate(
-      @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date
+      @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String sortField,
+      @RequestParam(required = false, defaultValue = "ASC") String sortDirection
   ) {
-
     // 날짜 파라미터 검증
     LocalDate validDate = date;
     if (validDate == null) {
@@ -98,8 +103,8 @@ public class WorkLogApiController {
       log.warn("날짜 파라미터가 null입니다. 현재 날짜로 대체: {}", validDate);
     }
 
-    // 유효한 날짜로 조회
-    Map<String, Object> result = workLogService.getWorkLogsByExactDate(validDate);
+    // 유효한 날짜로 조회 (정렬 필드와 방향, 상태 필터 함께 전달)
+    Map<String, Object> result = workLogService.getWorkLogsByExactDate(validDate, status, sortField, sortDirection);
     return ResponseEntity.ok(result);
   }
 

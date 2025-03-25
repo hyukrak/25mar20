@@ -66,9 +66,12 @@ const API = {
   /**
    * 특정 날짜의 작업 로그 데이터 가져오기
    * @param {string} date - 조회할 날짜 ('YY.MM.DD' 형식)
+   * @param {string} sortField - 정렬 필드
+   * @param {string} sortDirection - 정렬 방향 ('ASC' 또는 'DESC')
+   * @param {string} status - 상태 필터 ('completed', 'incomplete', null)
    * @returns {Promise} API 호출 결과 Promise
    */
-  fetchWorkLogsByDate: function(date) {
+  fetchWorkLogsByDate: function(date, sortField, sortDirection, status) {
     // 로딩 표시 시작
     loading = true;
     document.getElementById('loading').style.display = 'block';
@@ -88,9 +91,15 @@ const API = {
     // 날짜 형식 변환 (YY.MM.DD -> YYYY-MM-DD)
     const isoDate = Utils.convertToISODate(validDate);
 
-    // API 호출 (정렬 방향 기본값 ASC 적용)
+    // API 호출 (정렬 필드와 방향을 파라미터에 추가)
     const params = new URLSearchParams();
-    params.append('sortDirection', 'ASC');
+    if (sortField) params.append('sortField', sortField);
+    params.append('sortDirection', sortDirection || 'ASC');
+
+    // 상태 필터 추가
+    if (status) params.append('status', status);
+
+    console.log(`fetchWorkLogsByDate: date=${isoDate}, status=${status}, sort=${sortField} ${sortDirection}`);
 
     return fetch(`/api/worklogs/date/${isoDate}?${params.toString()}`)
     .then(response => {
@@ -166,17 +175,19 @@ const API = {
     if (sortField) params.append('sortField', sortField);
     params.append('sortDirection', sortDirection || 'ASC');
 
+    console.log(`fetchFilteredWorkLogs: status=${status}, sort=${sortField} ${sortDirection}`);
+
     // 날짜 필터 검증
     if (selectedDate) {
       if (Utils.isShortDateFormat(selectedDate)) {
-        // 유효한 형식이면 날짜 API 사용
-        return this.fetchWorkLogsByDate(selectedDate);
+        // 유효한 형식이면 날짜 API 사용 (정렬 필드와 방향 및 상태 필터도 함께 전달)
+        return this.fetchWorkLogsByDate(selectedDate, sortField, sortDirection, status);
       } else {
         // 유효하지 않은 형식이면 로그 기록하고 현재 날짜로 대체
         console.warn('유효하지 않은 selectedDate 형식:', selectedDate);
         UI.showToast('날짜 형식이 올바르지 않습니다 (YY.MM.DD 형식이어야 합니다).', 'warning');
         selectedDate = Utils.formatDateForSearch(new Date());
-        return this.fetchWorkLogsByDate(selectedDate);
+        return this.fetchWorkLogsByDate(selectedDate, sortField, sortDirection, status);
       }
     }
 

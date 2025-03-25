@@ -101,7 +101,8 @@ public class WorkLogService {
 
     // 허용된 정렬 필드만 처리
     if (sortField != null && !Arrays.asList(
-        "wl_car_model", "wl_product_color", "wl_product_code").contains(sortField)) {
+        "wl_work_datetime", "wl_car_model", "wl_product_color", "wl_product_code",
+        "wl_product_name", "wl_quantity", "wl_created_at", "wl_completed_at").contains(sortField)) {
       sortField = "wl_work_datetime"; // 기본값
     }
 
@@ -129,11 +130,14 @@ public class WorkLogService {
   }
 
   /**
-   * 특정 날짜의 작업 로그 목록 조회 (개선된 버전)
+   * 특정 날짜의 작업 로그 목록 조회
    * @param date 조회할 날짜
+   * @param status 상태 필터 ('completed', 'incomplete', null)
+   * @param sortField 정렬 필드
+   * @param sortDirection 정렬 방향 ('ASC' 또는 'DESC')
    * @return 해당 날짜의 작업 로그 목록
    */
-  public Map<String, Object> getWorkLogsByExactDate(LocalDate date) {
+  public Map<String, Object> getWorkLogsByExactDate(LocalDate date, String status, String sortField, String sortDirection) {
     // 날짜 검증
     LocalDate validDate = date;
     if (validDate == null) {
@@ -144,8 +148,20 @@ public class WorkLogService {
     // 날짜 범위 설정
     LocalDateTime[] range = DateTimeUtils.getDateTimeRange(validDate);
 
-    // 해당 날짜의 시작과 끝 시간으로 조회
-    return getWorkLogs(null, null, null, range[0], range[1], "wl_work_datetime", "ASC");
+    // 해당 날짜의 시작과 끝 시간으로 조회 (상태, 정렬 필드와 방향 사용)
+    return getWorkLogs(null, null, status, range[0], range[1], sortField, sortDirection);
+  }
+
+  // 기존 메소드도 오버로드하여 이전 코드와의 호환성 유지
+  public Map<String, Object> getWorkLogsByExactDate(LocalDate date, String sortField, String sortDirection) {
+    // 상태 필터 없이 호출 (null)
+    return getWorkLogsByExactDate(date, null, sortField, sortDirection);
+  }
+
+  // 기존 메소드도 오버로드하여 이전 코드와의 호환성 유지
+  public Map<String, Object> getWorkLogsByExactDate(LocalDate date) {
+    // 기본값으로 작업시간 기준 오름차순 정렬, 상태 필터 없음
+    return getWorkLogsByExactDate(date, null, "wl_work_datetime", "ASC");
   }
 
   /**

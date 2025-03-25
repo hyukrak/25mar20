@@ -53,9 +53,14 @@
     <choose>
       <when test="sortField != null">
         <choose>
+          <when test="sortField == 'wl_work_datetime'">wl_work_datetime</when>
           <when test="sortField == 'wl_car_model'">wl_car_model</when>
           <when test="sortField == 'wl_product_color'">wl_product_color</when>
           <when test="sortField == 'wl_product_code'">wl_product_code</when>
+          <when test="sortField == 'wl_product_name'">wl_product_name</when>
+          <when test="sortField == 'wl_quantity'">wl_quantity</when>
+          <when test="sortField == 'wl_created_at'">wl_created_at</when>
+          <when test="sortField == 'wl_completed_at'">wl_completed_at</when>
           <otherwise>wl_work_datetime</otherwise>
         </choose>
       </when>
@@ -124,6 +129,4 @@
     WHERE date(wl_work_datetime) = #{exactDate}
     ORDER BY wl_work_datetime ASC
   </select>
-
-  <!-- 나머지 메서드들 유지 (필요시 수정) -->
 </mapper>
