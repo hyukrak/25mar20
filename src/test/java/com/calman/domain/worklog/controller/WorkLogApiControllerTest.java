@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 작업 로그 API 컨트롤러 테스트
+ * 작업계획 API 컨트롤러 테스트
  */
 @WebMvcTest(controllers = WorkLogApiController.class)
 public class WorkLogApiControllerTest {
@@ -39,7 +39,7 @@ public class WorkLogApiControllerTest {
   private WorkLogService workLogService;
 
   @Test
-  @DisplayName("작업 로그 생성 API 테스트")
+  @DisplayName("작업계획 생성 API 테스트")
   public void testCreateWorkLog() throws Exception {
     // given
     WorkLogDTO.CreateRequest request = new WorkLogDTO.CreateRequest();
@@ -61,7 +61,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("ID로 작업 로그 조회 API 테스트")
+  @DisplayName("ID로 작업계획 조회 API 테스트")
   public void testGetWorkLogById() throws Exception {
     // given
     Long id = 1L;
@@ -84,7 +84,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 작업 로그 조회 시 404 응답 테스트")
+  @DisplayName("존재하지 않는 작업계획 조회 시 404 응답 테스트")
   public void testGetNonExistingWorkLog() throws Exception {
     // given
     Long id = 999L;
@@ -96,7 +96,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 목록 조회 API 테스트")
+  @DisplayName("작업계획 목록 조회 API 테스트")
   public void testGetWorkLogs() throws Exception {
     // given
     List<WorkLogDTO> mockWorkLogs = Arrays.asList(
@@ -151,7 +151,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 업데이트 API 테스트")
+  @DisplayName("작업계획 업데이트 API 테스트")
   public void testUpdateWorkLog() throws Exception {
     // given
     Long id = 1L;
@@ -169,7 +169,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 작업 로그 업데이트 시 404 응답 테스트")
+  @DisplayName("존재하지 않는 작업계획 업데이트 시 404 응답 테스트")
   public void testUpdateNonExistingWorkLog() throws Exception {
     // given
     Long id = 999L;
@@ -186,7 +186,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 삭제 API 테스트")
+  @DisplayName("작업계획 삭제 API 테스트")
   public void testDeleteWorkLog() throws Exception {
     // given
     Long id = 1L;
@@ -198,7 +198,7 @@ public class WorkLogApiControllerTest {
   }
 
   @Test
-  @DisplayName("차량 모델별 작업 로그 조회 API 테스트")
+  @DisplayName("차량 모델별 작업계획 조회 API 테스트")
   public void testGetWorkLogsByCarModel() throws Exception {
     // given
     String carModel = "Model S";

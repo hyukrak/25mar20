@@ -17,7 +17,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 작업 로그 매퍼 테스트 (SQLite 사용)
+ * 작업계획 매퍼 테스트 (SQLite 사용)
  */
 @MybatisTest
 @ActiveProfiles("test")
@@ -28,7 +28,7 @@ public class WorkLogMapperTest {
   private WorkLogMapper workLogMapper;
 
   @Test
-  @DisplayName("ID로 작업 로그 조회 테스트")
+  @DisplayName("ID로 작업계획 조회 테스트")
   public void testSelectWorkLogById() {
     // given
     Long id = 1L;
@@ -45,7 +45,7 @@ public class WorkLogMapperTest {
   }
 
   @Test
-  @DisplayName("작업 로그 목록 조회 테스트")
+  @DisplayName("작업계획 목록 조회 테스트")
   public void testSelectWorkLogs() {
     // given
     Map<String, Object> params = new HashMap<>();
@@ -63,7 +63,7 @@ public class WorkLogMapperTest {
   }
 
   @Test
-  @DisplayName("차량 모델별 작업 로그 필터링 테스트")
+  @DisplayName("차량 모델별 작업계획 필터링 테스트")
   public void testSelectWorkLogsByCarModel() {
     // given
     String carModel = "Model S";
@@ -78,7 +78,7 @@ public class WorkLogMapperTest {
   }
 
   @Test
-  @DisplayName("날짜 범위별 작업 로그 필터링 테스트")
+  @DisplayName("날짜 범위별 작업계획 필터링 테스트")
   public void testSelectWorkLogsByDateRange() {
     // given
     LocalDateTime startDate = LocalDateTime.of(2024, 3, 1, 0, 0);
@@ -98,7 +98,7 @@ public class WorkLogMapperTest {
   }
 
   @Test
-  @DisplayName("작업 로그 생성 테스트")
+  @DisplayName("작업계획 생성 테스트")
   public void testInsertWorkLog() {
     // given
     WorkLogDTO workLog = new WorkLogDTO();
@@ -119,7 +119,7 @@ public class WorkLogMapperTest {
   }
 
   @Test
-  @DisplayName("작업 로그 업데이트 테스트")
+  @DisplayName("작업계획 업데이트 테스트")
   public void testUpdateWorkLog() {
     // given
     Long id = 2L; // 기존 테스트 데이터 ID
@@ -140,7 +140,7 @@ public class WorkLogMapperTest {
   }
 
   @Test
-  @DisplayName("작업 로그 삭제 테스트")
+  @DisplayName("작업계획 삭제 테스트")
   public void testDeleteWorkLog() {
     // given
     Long id = 3L; // 기존 테스트 데이터 ID

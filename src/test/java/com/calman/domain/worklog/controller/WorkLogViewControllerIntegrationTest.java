@@ -20,14 +20,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 작업 로그 SSR 컨트롤러 통합 테스트
+ * 작업계획 SSR 컨트롤러 통합 테스트
  * - Thymeleaf SSR 컨트롤러의 전체 흐름을 테스트합니다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class WorkLogControllerIntegrationTest {
+public class WorkLogViewControllerIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
@@ -37,7 +37,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(1)
-  @DisplayName("1. 작업 로그 목록 페이지 테스트")
+  @DisplayName("1. 작업계획 목록 페이지 테스트")
   public void testListWorkLogs() throws Exception {
     mockMvc.perform(get("/worklogs"))
         .andExpect(status().isOk())
@@ -50,7 +50,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(2)
-  @DisplayName("2. 작업 로그 생성 폼 페이지 테스트")
+  @DisplayName("2. 작업계획 생성 폼 페이지 테스트")
   public void testNewWorkLogForm() throws Exception {
     mockMvc.perform(get("/worklogs/new"))
         .andExpect(status().isOk())
@@ -60,7 +60,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(3)
-  @DisplayName("3. 작업 로그 생성 처리 및 리다이렉트 테스트")
+  @DisplayName("3. 작업계획 생성 처리 및 리다이렉트 테스트")
   @Transactional
   public void testCreateWorkLog() throws Exception {
     // 현재 시간을 문자열로 변환 (Thymeleaf 폼 제출 형식)
@@ -90,7 +90,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(4)
-  @DisplayName("4. 필터링된 작업 로그 목록 페이지 테스트")
+  @DisplayName("4. 필터링된 작업계획 목록 페이지 테스트")
   public void testFilteredWorkLogs() throws Exception {
     mockMvc.perform(get("/worklogs")
             .param("carModel", "Model S")
@@ -104,7 +104,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(5)
-  @DisplayName("5. 작업 로그 상세 페이지 테스트")
+  @DisplayName("5. 작업계획 상세 페이지 테스트")
   public void testViewWorkLog() throws Exception {
     // 기존 테스트 데이터의 ID 사용
     Long existingId = 1L;
@@ -117,7 +117,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(6)
-  @DisplayName("6. 작업 로그 수정 폼 페이지 테스트")
+  @DisplayName("6. 작업계획 수정 폼 페이지 테스트")
   public void testEditWorkLogForm() throws Exception {
     // 기존 테스트 데이터의 ID 사용
     Long existingId = 1L;
@@ -131,7 +131,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(7)
-  @DisplayName("7. 작업 로그 업데이트 처리 및 리다이렉트 테스트")
+  @DisplayName("7. 작업계획 업데이트 처리 및 리다이렉트 테스트")
   @Transactional
   public void testUpdateWorkLog() throws Exception {
     // 기존 테스트 데이터의 ID 사용
@@ -153,7 +153,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(8)
-  @DisplayName("8. 존재하지 않는 작업 로그 조회시 404 페이지 테스트")
+  @DisplayName("8. 존재하지 않는 작업계획 조회시 404 페이지 테스트")
   public void testViewNonExistingWorkLog() throws Exception {
     // 존재하지 않는 ID
     Long nonExistingId = 9999L;
@@ -177,7 +177,7 @@ public class WorkLogControllerIntegrationTest {
 
   @Test
   @Order(10)
-  @DisplayName("10. 작업 로그 삭제 처리 및 리다이렉트 테스트")
+  @DisplayName("10. 작업계획 삭제 처리 및 리다이렉트 테스트")
   @Transactional
   public void testDeleteWorkLog() throws Exception {
     // 기존 테스트 데이터의 ID 사용
@@ -199,7 +199,7 @@ public class WorkLogControllerIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(view().name("worklogs/form"));
 
-    // 2. 작업 로그 생성
+    // 2. 작업계획 생성
     LocalDateTime now = LocalDateTime.now();
     String workDatetime = now.toString();
 

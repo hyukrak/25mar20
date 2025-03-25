@@ -34,7 +34,7 @@ public class WorkLogDTO {
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime createdAt;
 
-  // 새 작업 로그 생성을 위한 요청 DTO
+  // 새 작업계획 생성을 위한 요청 DTO
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
@@ -63,7 +63,7 @@ public class WorkLogDTO {
     }
   }
 
-  // 기존 작업 로그 업데이트를 위한 요청 DTO
+  // 기존 작업계획 업데이트를 위한 요청 DTO
   @Data
   @NoArgsConstructor
   @AllArgsConstructor

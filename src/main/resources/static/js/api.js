@@ -1,5 +1,5 @@
 /**
- * api.js - 작업 로그 시스템 API 호출 관련 함수
+ * api.js - 작업계획 시스템 API 호출 관련 함수
  * 서버와의 통신을 담당하는 함수들을 포함합니다.
  */
 
@@ -23,7 +23,7 @@ console.log(`현재 클라이언트 ID: ${CLIENT_ID}`);
 // API 네임스페이스 생성
 const API = {
   /**
-   * 작업 로그 데이터 가져오기
+   * 작업계획 데이터 가져오기
    * @returns {Promise} API 호출 결과 Promise
    */
   fetchWorkLogsData: function() {
@@ -68,10 +68,6 @@ const API = {
     .catch(error => {
       console.error('데이터 로드 오류:', error);
       UI.showToast('데이터 로드 중 오류가 발생했습니다: ' + error.message, 'error');
-
-      // 오류 발생 시 더미 데이터 생성 (개발 중에만 사용)
-      workLogData = Utils.generateDummyData(40);
-      UI.renderWorkLogData(workLogData);
     })
     .finally(() => {
       // 로딩 표시 종료
@@ -81,7 +77,7 @@ const API = {
   },
 
   /**
-   * 특정 날짜의 작업 로그 데이터 가져오기
+   * 특정 날짜의 작업계획 데이터 가져오기
    * @param {string} date - 조회할 날짜 ('YY.MM.DD' 형식)
    * @param {string} sortField - 정렬 필드
    * @param {string} sortDirection - 정렬 방향 ('ASC' 또는 'DESC')
@@ -173,7 +169,7 @@ const API = {
   },
 
   /**
-   * 필터링 및 정렬 조건으로 작업 로그 데이터 가져오기
+   * 필터링 및 정렬 조건으로 작업계획 데이터 가져오기
    * @param {string} status - 상태 필터 ('completed', 'incomplete', null)
    * @param {string} sortField - 정렬 필드
    * @param {string} sortDirection - 정렬 방향 ('ASC', 'DESC')
@@ -270,8 +266,8 @@ const API = {
   },
 
   /**
-   * 작업 로그 생성
-   * @param {Object} workLog - 생성할 작업 로그 데이터
+   * 작업계획 생성
+   * @param {Object} workLog - 생성할 작업계획 데이터
    * @returns {Promise} API 호출 결과 Promise
    */
   createWorkLog: function(workLog) {
@@ -295,25 +291,13 @@ const API = {
     .catch(error => {
       console.error('생성 오류:', error);
       UI.showToast('생성 중 오류가 발생했습니다: ' + error.message, 'error');
-
-      // 개발용 더미 데이터 추가 (실제 API 연동 전까지만 사용)
-      Utils.addDummyData(
-          workLog.workDatetime,
-          workLog.carModel,
-          workLog.productColor,
-          workLog.productCode,
-          workLog.productName,
-          workLog.quantity
-      );
-      UI.showToast('작업 내역이 생성되었습니다.', 'success');
-
       throw error;
     });
   },
 
   /**
-   * 작업 로그 수정
-   * @param {Object} workLog - 수정할 작업 로그 데이터
+   * 작업계획 수정
+   * @param {Object} workLog - 수정할 작업계획 데이터
    * @returns {Promise} API 호출 결과 Promise
    */
   updateWorkLog: function(workLog) {
@@ -338,26 +322,13 @@ const API = {
     .catch(error => {
       console.error('수정 오류:', error);
       UI.showToast('수정 중 오류가 발생했습니다: ' + error.message, 'error');
-
-      // 개발용 더미 데이터 수정 (실제 API 연동 전까지만 사용)
-      Utils.updateDummyData(
-          workLog.id,
-          workLog.workDatetime,
-          workLog.carModel,
-          workLog.productColor,
-          workLog.productCode,
-          workLog.productName,
-          workLog.quantity
-      );
-      UI.showToast('작업 내역이 수정되었습니다.', 'success');
-
       throw error;
     });
   },
 
   /**
-   * 작업 로그 완료 상태 업데이트
-   * @param {number} id - 작업 로그 ID
+   * 작업계획 완료 상태 업데이트
+   * @param {number} id - 작업계획 ID
    * @param {boolean} completed - 완료 여부
    * @returns {Promise} API 호출 결과 Promise
    */
@@ -398,8 +369,8 @@ const API = {
   },
 
   /**
-   * 작업 로그 삭제
-   * @param {Array} ids - 삭제할 작업 로그 ID 배열
+   * 작업계획 삭제
+   * @param {Array} ids - 삭제할 작업계획 ID 배열
    * @returns {Promise} API 호출 결과 Promise
    */
   deleteWorkLogs: function(ids) {
@@ -413,7 +384,7 @@ const API = {
     .then(responses => {
       const allSuccessful = responses.every(response => response.ok);
       if (allSuccessful) {
-        UI.showToast('선택한 작업 로그가 삭제되었습니다.', 'success');
+        UI.showToast('선택한 작업계획가 삭제되었습니다.', 'success');
         return this.fetchWorkLogsData(); // 데이터 새로 불러오기
       } else {
         throw new Error('일부 항목 삭제 중 오류가 발생했습니다.');
@@ -422,11 +393,6 @@ const API = {
     .catch(error => {
       console.error('삭제 오류:', error);
       UI.showToast('삭제 중 오류가 발생했습니다: ' + error.message, 'error');
-
-      // 개발용 더미 데이터 삭제 (실제 API 연동 전까지만 사용)
-      Utils.deleteDummyData(ids);
-      UI.showToast('선택한 작업 로그가 삭제되었습니다.', 'success');
-
       throw error;
     });
   },

@@ -305,7 +305,7 @@ public class ExcelUploadController {
               rowData.rowIndex + 1, rowData.productCodeKey, productCode, rowData.colorCode, totalQuantity);
 
           try {
-            // 작업 로그 생성 요청 준비
+            // 작업계획 생성 요청 준비
             CreateRequest request = new CreateRequest();
 
             // 날짜시간 문자열 변환 (UI 호환성)
@@ -321,17 +321,17 @@ public class ExcelUploadController {
             // 데이터 저장
             Long savedId = workLogService.createWorkLog(request);
             if (savedId != null) {
-              log.debug("작업 로그 생성 성공: ID={}", savedId);
+              log.debug("작업계획 생성 성공: ID={}", savedId);
               successCount.incrementAndGet();
               rowData.successCount++; // 행 단위 성공 카운트 증가
             } else {
-              log.error("작업 로그 생성 실패: 행={}", rowData.rowIndex + 1);
+              log.error("작업계획 생성 실패: 행={}", rowData.rowIndex + 1);
               synchronized (errors) {
                 errors.add("행 " + (rowData.rowIndex + 1) + ": 저장 실패");
               }
             }
           } catch (Exception e) {
-            log.error("작업 로그 처리 중 오류 발생: 행={}", rowData.rowIndex + 1, e);
+            log.error("작업계획 처리 중 오류 발생: 행={}", rowData.rowIndex + 1, e);
             synchronized (errors) {
               errors.add("행 " + (rowData.rowIndex + 1) + ": " + e.getMessage());
             }
@@ -447,7 +447,7 @@ public class ExcelUploadController {
     }
 
     try {
-      // 작업 로그 생성 요청 준비
+      // 작업계획 생성 요청 준비
       CreateRequest request = new CreateRequest();
 
       // 날짜시간 문자열 변환 (UI 호환성)
@@ -461,19 +461,19 @@ public class ExcelUploadController {
       request.setQuantity(quantity);
 
       // 로그
-      log.debug("4번시트 작업 로그: 행={}, 열={}, 제품코드={}, 제품명={}, 색상={}, 수량={}",
+      log.debug("4번시트 작업계획: 행={}, 열={}, 제품코드={}, 제품명={}, 색상={}, 수량={}",
           rowIdx + 1, CellReference.convertNumToColString(colIdx),
           productCode, productName, colorCode, quantity);
 
       // 데이터 저장
       Long savedId = workLogService.createWorkLog(request);
       if (savedId != null) {
-        log.debug("작업 로그 생성 성공: 행={}, 열={}, ID={}",
+        log.debug("작업계획 생성 성공: 행={}, 열={}, ID={}",
             rowIdx + 1, CellReference.convertNumToColString(colIdx), savedId);
         successCount.incrementAndGet();
         return true;
       } else {
-        log.error("작업 로그 생성 실패: 행={}, 열={}",
+        log.error("작업계획 생성 실패: 행={}, 열={}",
             rowIdx + 1, CellReference.convertNumToColString(colIdx));
         synchronized (errors) {
           errors.add(String.format("행 %d, 열 %s: 저장 실패",
@@ -482,7 +482,7 @@ public class ExcelUploadController {
         return false;
       }
     } catch (Exception e) {
-      log.error("작업 로그 처리 중 오류 발생: 행={}, 열={}",
+      log.error("작업계획 처리 중 오류 발생: 행={}, 열={}",
           rowIdx + 1, CellReference.convertNumToColString(colIdx), e);
       synchronized (errors) {
         errors.add(String.format("행 %d, 열 %s: %s",

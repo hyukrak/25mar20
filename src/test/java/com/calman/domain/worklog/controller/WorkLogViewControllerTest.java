@@ -22,10 +22,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 작업 로그 Thymeleaf 컨트롤러 테스트
+ * 작업계획 Thymeleaf 컨트롤러 테스트
  */
-@WebMvcTest(controllers = WorkLogController.class)
-public class WorkLogControllerTest {
+@WebMvcTest(controllers = WorkLogViewController.class)
+public class WorkLogViewControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
@@ -34,7 +34,7 @@ public class WorkLogControllerTest {
   private WorkLogService workLogService;
 
   @Test
-  @DisplayName("작업 로그 목록 페이지 테스트")
+  @DisplayName("작업계획 목록 페이지 테스트")
   public void testListWorkLogs() throws Exception {
     // given
     List<WorkLogDTO> mockWorkLogs = Arrays.asList(
@@ -65,7 +65,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 생성 폼 페이지 테스트")
+  @DisplayName("작업계획 생성 폼 페이지 테스트")
   public void testNewWorkLogForm() throws Exception {
     // when & then
     mockMvc.perform(get("/worklogs/new"))
@@ -75,7 +75,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 상세 조회 페이지 테스트")
+  @DisplayName("작업계획 상세 조회 페이지 테스트")
   public void testViewWorkLog() throws Exception {
     // given
     Long id = 1L;
@@ -94,7 +94,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 작업 로그 조회 시 404 페이지 테스트")
+  @DisplayName("존재하지 않는 작업계획 조회 시 404 페이지 테스트")
   public void testViewNonExistingWorkLog() throws Exception {
     // given
     Long id = 999L;
@@ -107,7 +107,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 수정 폼 페이지 테스트")
+  @DisplayName("작업계획 수정 폼 페이지 테스트")
   public void testEditWorkLogForm() throws Exception {
     // given
     Long id = 1L;
@@ -128,7 +128,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 생성 처리 테스트")
+  @DisplayName("작업계획 생성 처리 테스트")
   public void testCreateWorkLog() throws Exception {
     // given
     given(workLogService.createWorkLog(any(WorkLogDTO.CreateRequest.class))).willReturn(1L);
@@ -148,7 +148,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 업데이트 처리 테스트")
+  @DisplayName("작업계획 업데이트 처리 테스트")
   public void testUpdateWorkLog() throws Exception {
     // given
     Long id = 1L;
@@ -169,7 +169,7 @@ public class WorkLogControllerTest {
   }
 
   @Test
-  @DisplayName("작업 로그 삭제 처리 테스트")
+  @DisplayName("작업계획 삭제 처리 테스트")
   public void testDeleteWorkLog() throws Exception {
     // given
     Long id = 1L;

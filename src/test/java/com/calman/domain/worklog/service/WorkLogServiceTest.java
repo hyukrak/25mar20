@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 /**
- * 작업 로그 서비스 테스트
+ * 작업계획 서비스 테스트
  */
 @ExtendWith(MockitoExtension.class)
 public class WorkLogServiceTest {
@@ -31,7 +31,7 @@ public class WorkLogServiceTest {
   private WorkLogService workLogService;
 
   @Test
-  @DisplayName("새 작업 로그 생성 테스트")
+  @DisplayName("새 작업계획 생성 테스트")
   public void testCreateWorkLog() {
     // given
     WorkLogDTO.CreateRequest request = new WorkLogDTO.CreateRequest();
@@ -55,7 +55,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("ID로 작업 로그 조회 테스트")
+  @DisplayName("ID로 작업계획 조회 테스트")
   public void testGetWorkLogById() {
     // given
     Long id = 1L;
@@ -77,7 +77,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("ID로 작업 로그 상세 조회 테스트")
+  @DisplayName("ID로 작업계획 상세 조회 테스트")
   public void testGetWorkLogDetailById() {
     // given
     Long id = 1L;
@@ -100,7 +100,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("작업 로그 목록 조회 테스트")
+  @DisplayName("작업계획 목록 조회 테스트")
   public void testGetWorkLogs() {
     // given
     List<WorkLogDTO> mockWorkLogs = Arrays.asList(
@@ -123,7 +123,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("작업 로그 업데이트 테스트")
+  @DisplayName("작업계획 업데이트 테스트")
   public void testUpdateWorkLog() {
     // given
     Long id = 1L;
@@ -148,7 +148,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 작업 로그 업데이트 테스트")
+  @DisplayName("존재하지 않는 작업계획 업데이트 테스트")
   public void testUpdateNonExistingWorkLog() {
     // given
     Long id = 999L;
@@ -164,7 +164,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("작업 로그 삭제 테스트")
+  @DisplayName("작업계획 삭제 테스트")
   public void testDeleteWorkLog() {
     // given
     Long id = 1L;
@@ -178,7 +178,7 @@ public class WorkLogServiceTest {
   }
 
   @Test
-  @DisplayName("차량 모델별 작업 로그 조회 테스트")
+  @DisplayName("차량 모델별 작업계획 조회 테스트")
   public void testGetWorkLogsByCarModel() {
     // given
     String carModel = "Model S";

@@ -1,5 +1,5 @@
 /**
- * ui.js - 작업 로그 시스템 UI 관련 함수
+ * ui.js - 작업계획 시스템 UI 관련 함수
  * UI 렌더링 및 업데이트 관련 함수들을 포함합니다.
  */
 
@@ -11,8 +11,8 @@ let currentStatus = null;
 // UI 네임스페이스 생성
 const UI = {
   /**
-   * 작업 로그 데이터 렌더링 함수
-   * @param {Array} data - 렌더링할 작업 로그 데이터 배열
+   * 작업계획 데이터 렌더링 함수
+   * @param {Array} data - 렌더링할 작업계획 데이터 배열
    */
   renderWorkLogData: function(data) {
     const tableBody = document.getElementById('workLogTableBody');

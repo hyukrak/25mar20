@@ -9,8 +9,6 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema/worklogs.sql
-  thymeleaf:
-    prefix: classpath:/templates/
   messages:
     basename: messages
     encoding: UTF-8
@@ -40,9 +38,9 @@ springdoc:
     operations-sorter: method
   packages-to-scan: com.calman
   info:
-    title: 작업 로그 관리 시스템 API
+    title: 작업계획 관리 시스템 API
     version: 1.0.0
-    description: 작업 로그 관리 시스템 API 명세서
+    description: 작업계획 관리 시스템 API 명세서
     contact:
       name: 개발팀
       email: dev@calman.co.kr
@@ -56,8 +54,6 @@ spring:
   devtools:
     restart:
       enabled: true
-  thymeleaf:
-    cache: false
 
 # 개발환경 서버 설정
 server:
@@ -86,8 +82,6 @@ spring:
   devtools:
     restart:
       enabled: false
-  thymeleaf:
-    cache: true
 
 # 운영환경 서버 설정
 server:

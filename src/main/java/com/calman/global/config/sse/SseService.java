@@ -87,24 +87,24 @@ public class SseService {
   }
 
   /**
-   * 작업 로그 업데이트 이벤트 발행
-   * @param updatedWorkLog 업데이트된 작업 로그 정보
+   * 작업계획 업데이트 이벤트 발행
+   * @param updatedWorkLog 업데이트된 작업계획 정보
    */
   public void publishWorkLogUpdated(WorkLogDTO updatedWorkLog) {
     publish("worklog-updated", updatedWorkLog);
   }
 
   /**
-   * 작업 로그 생성 이벤트 발행
-   * @param createdWorkLog 생성된 작업 로그 정보
+   * 작업계획 생성 이벤트 발행
+   * @param createdWorkLog 생성된 작업계획 정보
    */
   public void publishWorkLogCreated(WorkLogDTO createdWorkLog) {
     publish("worklog-created", createdWorkLog);
   }
 
   /**
-   * 작업 로그 삭제 이벤트 발행
-   * @param deletedId 삭제된 작업 로그 ID
+   * 작업계획 삭제 이벤트 발행
+   * @param deletedId 삭제된 작업계획 ID
    */
   public void publishWorkLogDeleted(Long deletedId) {
     publish("worklog-deleted", Map.of("id", deletedId));

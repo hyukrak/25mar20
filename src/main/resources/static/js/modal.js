@@ -1,5 +1,5 @@
 /**
- * modal.js - 작업 로그 시스템 모달 관련 함수
+ * modal.js - 작업계획 시스템 모달 관련 함수
  * 모달 창 표시 및 관련 작업을 처리하는 함수들을 포함합니다.
  */
 
@@ -85,8 +85,8 @@ const Modal = {
             const date = new Date(year, month, day, hour, minute);
             datePickerInstance.setDate(date, true);
           }
-        } catch (e) {
-          console.error('날짜 파싱 오류:', e);
+        } catch (error) {
+          console.error('날짜 파싱 오류:', error);
         }
       }
 
@@ -306,7 +306,7 @@ const Modal = {
     );
 
     if (selectedIds.length > 0) {
-      if (confirm('선택한 작업 로그를 삭제하시겠습니까?')) {
+      if (confirm('선택한 작업계획를 삭제하시겠습니까?')) {
         API.deleteWorkLogs(selectedIds);
       }
     }

@@ -1,5 +1,5 @@
 /**
- * sse.js - 작업 로그 시스템 SSE(Server-Sent Events) 관련 기능
+ * sse.js - 작업계획 시스템 SSE(Server-Sent Events) 관련 기능
  * 서버의 실시간 이벤트를 수신하고 처리하는 기능을 제공합니다.
  */
 
@@ -42,7 +42,7 @@ const SSE = {
         this.updateConnectionStatus(true);
       });
 
-      // 작업 로그 업데이트 이벤트
+      // 작업계획 업데이트 이벤트
       this.eventSource.addEventListener('worklog-updated', (event) => {
         try {
           const workLog = JSON.parse(event.data);
@@ -52,17 +52,17 @@ const SSE = {
           if (index !== -1) {
             workLogData[index] = workLog;
             UI.renderWorkLogData(workLogData);
-            UI.showToast('작업 로그가 업데이트되었습니다', 'info', 1500);
+            UI.showToast('작업계획가 업데이트되었습니다', 'info', 1500);
           } else {
             // 현재 데이터에 없는 경우 새로고침 (다른 필터 조건으로 보고 있을 수 있음)
             API.fetchWorkLogsData();
           }
         } catch (error) {
-          console.error('SSE: 작업 로그 업데이트 처리 중 오류', error);
+          console.error('SSE: 작업계획 업데이트 처리 중 오류', error);
         }
       });
 
-      // 작업 로그 생성 이벤트
+      // 작업계획 생성 이벤트
       this.eventSource.addEventListener('worklog-created', (event) => {
         try {
           const workLog = JSON.parse(event.data);
@@ -71,7 +71,7 @@ const SSE = {
           if (selectedDate) {
             const workDate = Utils.formatISOToDisplay(workLog.workDatetime);
             if (!workDate.startsWith(selectedDate)) {
-              console.log('SSE: 현재 필터 조건에 맞지 않는 새 작업 로그');
+              console.log('SSE: 현재 필터 조건에 맞지 않는 새 작업계획');
               return;
             }
           }
@@ -79,13 +79,13 @@ const SSE = {
           // 새 항목 추가
           workLogData.unshift(workLog);
           UI.renderWorkLogData(workLogData);
-          UI.showToast('새 작업 로그가 추가되었습니다', 'info', 1500);
+          UI.showToast('새 작업계획가 추가되었습니다', 'info', 1500);
         } catch (error) {
-          console.error('SSE: 작업 로그 생성 처리 중 오류', error);
+          console.error('SSE: 작업계획 생성 처리 중 오류', error);
         }
       });
 
-      // 작업 로그 삭제 이벤트
+      // 작업계획 삭제 이벤트
       this.eventSource.addEventListener('worklog-deleted', (event) => {
         try {
           const data = JSON.parse(event.data);
@@ -95,10 +95,10 @@ const SSE = {
           if (index !== -1) {
             workLogData.splice(index, 1);
             UI.renderWorkLogData(workLogData);
-            UI.showToast('작업 로그가 삭제되었습니다', 'info', 1500);
+            UI.showToast('작업계획가 삭제되었습니다', 'info', 1500);
           }
         } catch (error) {
-          console.error('SSE: 작업 로그 삭제 처리 중 오류', error);
+          console.error('SSE: 작업계획 삭제 처리 중 오류', error);
         }
       });
 

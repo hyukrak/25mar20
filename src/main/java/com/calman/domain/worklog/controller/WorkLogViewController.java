@@ -1,43 +1,33 @@
 package com.calman.domain.worklog.controller;
 
-import com.calman.global.util.DateTimeUtils;
-import com.calman.domain.worklog.dto.WorkLogDTO;
-import com.calman.domain.worklog.dto.WorkLogDTO.CreateRequest;
-import com.calman.domain.worklog.dto.WorkLogDTO.DetailResponse;
-import com.calman.domain.worklog.dto.WorkLogDTO.StatusUpdateRequest;
 import com.calman.domain.worklog.service.WorkLogService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
- * 작업 로그 타임리프 SSR 컨트롤러
+ * 작업계획 컨트롤러
  */
 @Controller
-@RequestMapping("/worklogs")
 @RequiredArgsConstructor
-public class WorkLogController {
+public class WorkLogViewController {
 
   private final WorkLogService workLogService;
 
   /**
-   * 작업 로그 대시보드 페이지
+   * 작업계획 대시보드 페이지
    */
-  @GetMapping("/")
-  public String dashboard(Model model) {
-    // 여기에 대시보드에 필요한 데이터를 추가
-    return "worklogs";
+  @GetMapping("/worklogs")
+  public String forwardToWorklogsPage() {
+    return "forward:/worklogs.html";
   }
-//
+
+/* ##################################################### */
+/* ############### DEPRECATED 2025.03.25 ############### */
+/* ##################################################### */
+
 //  /**
-//   * 작업 로그 목록 페이지
+//   * 작업계획 목록 페이지
 //   */
 //  @GetMapping
 //  public String listWorkLogs(
@@ -70,7 +60,7 @@ public class WorkLogController {
 //  }
 //
 //  /**
-//   * 특정 날짜의 작업 로그만 조회
+//   * 특정 날짜의 작업계획만 조회
 //   */
 //  @GetMapping("/date/{date}")
 //  public String listWorkLogsByDate(
@@ -90,7 +80,7 @@ public class WorkLogController {
 //  }
 //
 //  /**
-//   * 새 작업 로그 생성 폼
+//   * 새 작업계획 생성 폼
 //   */
 //  @GetMapping("/new")
 //  public String newWorkLogForm(Model model) {
@@ -99,17 +89,17 @@ public class WorkLogController {
 //  }
 //
 //  /**
-//   * 작업 로그 생성 처리
+//   * 작업계획 생성 처리
 //   */
 //  @PostMapping
 //  public String createWorkLog(@ModelAttribute CreateRequest workLog, RedirectAttributes redirectAttributes) {
 //    Long id = workLogService.createWorkLog(workLog);
-//    redirectAttributes.addFlashAttribute("successMessage", "작업 로그가 성공적으로 생성되었습니다.");
+//    redirectAttributes.addFlashAttribute("successMessage", "작업계획가 성공적으로 생성되었습니다.");
 //    return "redirect:/worklogs";
 //  }
 //
 //  /**
-//   * 작업 로그 상세 조회
+//   * 작업계획 상세 조회
 //   */
 //  @GetMapping("/{id}")
 //  public String viewWorkLog(@PathVariable Long id, Model model) {
@@ -122,7 +112,7 @@ public class WorkLogController {
 //  }
 //
 //  /**
-//   * 작업 로그 수정 폼
+//   * 작업계획 수정 폼
 //   */
 //  @GetMapping("/{id}/edit")
 //  public String editWorkLogForm(@PathVariable Long id, Model model) {
@@ -146,7 +136,7 @@ public class WorkLogController {
 //  }
 //
 //  /**
-//   * 작업 로그 수정 처리
+//   * 작업계획 수정 처리
 //   */
 //  @PostMapping("/{id}")
 //  public String updateWorkLog(
@@ -156,15 +146,15 @@ public class WorkLogController {
 //  ) {
 //    boolean updated = workLogService.updateWorkLog(id, workLog);
 //    if (updated) {
-//      redirectAttributes.addFlashAttribute("successMessage", "작업 로그가 성공적으로 수정되었습니다.");
+//      redirectAttributes.addFlashAttribute("successMessage", "작업계획가 성공적으로 수정되었습니다.");
 //    } else {
-//      redirectAttributes.addFlashAttribute("errorMessage", "작업 로그 수정에 실패했습니다.");
+//      redirectAttributes.addFlashAttribute("errorMessage", "작업계획 수정에 실패했습니다.");
 //    }
 //    return "redirect:/worklogs/" + id;
 //  }
 //
 //  /**
-//   * 작업 로그 완료 상태 업데이트 처리
+//   * 작업계획 완료 상태 업데이트 처리
 //   */
 //  @PostMapping("/{id}/status")
 //  public String updateWorkLogStatus(
@@ -178,21 +168,21 @@ public class WorkLogController {
 //          "작업이 완료 상태로 변경되었습니다." : "작업이 미완료 상태로 변경되었습니다.";
 //      redirectAttributes.addFlashAttribute("successMessage", message);
 //    } else {
-//      redirectAttributes.addFlashAttribute("errorMessage", "작업 로그 상태 변경에 실패했습니다.");
+//      redirectAttributes.addFlashAttribute("errorMessage", "작업계획 상태 변경에 실패했습니다.");
 //    }
 //    return "redirect:/worklogs/" + id;
 //  }
 //
 //  /**
-//   * 작업 로그 삭제 처리
+//   * 작업계획 삭제 처리
 //   */
 //  @PostMapping("/{id}/delete")
 //  public String deleteWorkLog(@PathVariable Long id, RedirectAttributes redirectAttributes) {
 //    boolean deleted = workLogService.deleteWorkLog(id);
 //    if (deleted) {
-//      redirectAttributes.addFlashAttribute("successMessage", "작업 로그가 성공적으로 삭제되었습니다.");
+//      redirectAttributes.addFlashAttribute("successMessage", "작업계획가 성공적으로 삭제되었습니다.");
 //    } else {
-//      redirectAttributes.addFlashAttribute("errorMessage", "작업 로그 삭제에 실패했습니다.");
+//      redirectAttributes.addFlashAttribute("errorMessage", "작업계획 삭제에 실패했습니다.");
 //    }
 //    return "redirect:/worklogs";
 //  }

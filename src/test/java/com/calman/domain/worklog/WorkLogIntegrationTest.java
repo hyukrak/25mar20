@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 작업 로그 통합 테스트 (SQLite 사용)
+ * 작업계획 통합 테스트 (SQLite 사용)
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -47,7 +47,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(1)
-  @DisplayName("1. 작업 로그 생성 테스트")
+  @DisplayName("1. 작업계획 생성 테스트")
   public void testCreateWorkLog() throws Exception {
     // given
     WorkLogDTO.CreateRequest request = new WorkLogDTO.CreateRequest();
@@ -75,7 +75,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(2)
-  @DisplayName("2. 생성된 작업 로그 조회 테스트")
+  @DisplayName("2. 생성된 작업계획 조회 테스트")
   public void testGetCreatedWorkLog() throws Exception {
     // 이전 테스트에서 생성된 ID가 있는지 확인
     assertThat(createdWorkLogId).isNotNull();
@@ -91,7 +91,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(3)
-  @DisplayName("3. 작업 로그 목록 조회 테스트")
+  @DisplayName("3. 작업계획 목록 조회 테스트")
   public void testGetWorkLogs() throws Exception {
     // when & then
     mockMvc.perform(get("/api/worklogs")
@@ -106,7 +106,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(4)
-  @DisplayName("4. 특정 차량 모델로 작업 로그 필터링 테스트")
+  @DisplayName("4. 특정 차량 모델로 작업계획 필터링 테스트")
   public void testFilterWorkLogsByCarModel() throws Exception {
     // when & then
     mockMvc.perform(get("/api/worklogs")
@@ -120,7 +120,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(5)
-  @DisplayName("5. 작업 로그 업데이트 테스트")
+  @DisplayName("5. 작업계획 업데이트 테스트")
   public void testUpdateWorkLog() throws Exception {
     // given
     WorkLogDTO.UpdateRequest request = new WorkLogDTO.UpdateRequest();
@@ -145,7 +145,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(6)
-  @DisplayName("6. 날짜 범위로 작업 로그 필터링 테스트")
+  @DisplayName("6. 날짜 범위로 작업계획 필터링 테스트")
   public void testFilterWorkLogsByDateRange() throws Exception {
     // given
     LocalDateTime now = LocalDateTime.now();
@@ -165,7 +165,7 @@ public class WorkLogIntegrationTest {
 
   @Test
   @Order(7)
-  @DisplayName("7. 작업 로그 삭제 테스트")
+  @DisplayName("7. 작업계획 삭제 테스트")
   public void testDeleteWorkLog() throws Exception {
     // when
     mockMvc.perform(delete("/api/worklogs/{id}", createdWorkLogId))

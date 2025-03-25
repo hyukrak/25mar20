@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 작업 로그 서비스
+ * 작업계획 서비스
  */
 @Slf4j
 @Service
@@ -28,9 +28,9 @@ public class WorkLogService {
   private final SseService sseService;
 
   /**
-   * 새 작업 로그 생성
-   * @param request 작업 로그 생성 요청 정보
-   * @return 생성된 작업 로그 ID
+   * 새 작업계획 생성
+   * @param request 작업계획 생성 요청 정보
+   * @return 생성된 작업계획 ID
    */
   @Transactional
   public Long createWorkLog(WorkLogDTO.CreateRequest request) {
@@ -59,18 +59,18 @@ public class WorkLogService {
   }
 
   /**
-   * ID로 작업 로그 조회
-   * @param id 작업 로그 ID
-   * @return 작업 로그 정보
+   * ID로 작업계획 조회
+   * @param id 작업계획 ID
+   * @return 작업계획 정보
    */
   public WorkLogDTO getWorkLogById(Long id) {
     return workLogMapper.selectWorkLogById(id);
   }
 
   /**
-   * 상세 응답용 작업 로그 조회
-   * @param id 작업 로그 ID
-   * @return 상세 정보가 포함된 작업 로그 응답 DTO
+   * 상세 응답용 작업계획 조회
+   * @param id 작업계획 ID
+   * @return 상세 정보가 포함된 작업계획 응답 DTO
    */
   public WorkLogDTO.DetailResponse getWorkLogDetailById(Long id) {
     WorkLogDTO workLog = workLogMapper.selectWorkLogById(id);
@@ -92,7 +92,7 @@ public class WorkLogService {
   }
 
   /**
-   * 필터링으로 작업 로그 목록 조회
+   * 필터링으로 작업계획 목록 조회
    */
   public Map<String, Object> getWorkLogs(
       String carModel,
@@ -134,12 +134,12 @@ public class WorkLogService {
   }
 
   /**
-   * 특정 날짜의 작업 로그 목록 조회
+   * 특정 날짜의 작업계획 목록 조회
    * @param date 조회할 날짜
    * @param status 상태 필터 ('completed', 'incomplete', null)
    * @param sortField 정렬 필드
    * @param sortDirection 정렬 방향 ('ASC' 또는 'DESC')
-   * @return 해당 날짜의 작업 로그 목록
+   * @return 해당 날짜의 작업계획 목록
    */
   public Map<String, Object> getWorkLogsByExactDate(LocalDate date, String status, String sortField, String sortDirection) {
     // 날짜 검증
@@ -169,8 +169,8 @@ public class WorkLogService {
   }
 
   /**
-   * 작업 로그 업데이트
-   * @param id 업데이트할 작업 로그 ID
+   * 작업계획 업데이트
+   * @param id 업데이트할 작업계획 ID
    * @param request 업데이트 요청 정보
    * @return 성공 여부
    */
@@ -205,7 +205,7 @@ public class WorkLogService {
       // 최신 데이터로 다시 조회 (DB의 변경된 값을 확실히 포함하기 위해)
       WorkLogDTO updatedWorkLog = workLogMapper.selectWorkLogById(id);
       sseService.publishWorkLogUpdated(updatedWorkLog);
-      log.debug("작업 로그 업데이트 이벤트 발행: ID={}", id);
+      log.debug("작업계획 업데이트 이벤트 발행: ID={}", id);
     }
 
     return updated;
@@ -213,7 +213,7 @@ public class WorkLogService {
 
   /**
    * 작업 완료 상태 업데이트
-   * @param id 작업 로그 ID
+   * @param id 작업계획 ID
    * @param completed 완료 여부
    * @param completedBy 완료 처리한 클라이언트/디바이스 ID
    * @return 성공 여부
@@ -221,7 +221,7 @@ public class WorkLogService {
   @Transactional
   public boolean updateWorkLogCompletionStatus(Long id, boolean completed, String completedBy) {
     LocalDateTime completedAt = completed ? LocalDateTime.now() : null;
-    log.debug("작업 로그 상태 업데이트: ID={}, 완료={}, 클라이언트={}", id, completed, completedBy);
+    log.debug("작업계획 상태 업데이트: ID={}, 완료={}, 클라이언트={}", id, completed, completedBy);
 
     boolean updated = workLogMapper.updateWorkLogCompletionStatusWithBy(id, completedAt, completedBy) > 0;
 
@@ -230,7 +230,7 @@ public class WorkLogService {
       // 최신 데이터로 다시 조회
       WorkLogDTO updatedWorkLog = workLogMapper.selectWorkLogById(id);
       sseService.publishWorkLogUpdated(updatedWorkLog);
-      log.debug("작업 로그 상태 변경 이벤트 발행: ID={}, 완료={}, 클라이언트={}", id, completed, completedBy);
+      log.debug("작업계획 상태 변경 이벤트 발행: ID={}, 완료={}, 클라이언트={}", id, completed, completedBy);
     }
 
     return updated;
@@ -238,7 +238,7 @@ public class WorkLogService {
 
   /**
    * 작업 완료 상태 업데이트 (deprecated)
-   * @param id 작업 로그 ID
+   * @param id 작업계획 ID
    * @param completed 완료 여부
    * @return 성공 여부
    */
@@ -249,8 +249,8 @@ public class WorkLogService {
   }
 
   /**
-   * 작업 로그 삭제
-   * @param id 삭제할 작업 로그 ID
+   * 작업계획 삭제
+   * @param id 삭제할 작업계획 ID
    * @return 성공 여부
    */
   @Transactional
@@ -260,44 +260,44 @@ public class WorkLogService {
     // 삭제 성공 시 SSE 이벤트 발행
     if (deleted) {
       sseService.publishWorkLogDeleted(id);
-      log.debug("작업 로그 삭제 이벤트 발행: ID={}", id);
+      log.debug("작업계획 삭제 이벤트 발행: ID={}", id);
     }
 
     return deleted;
   }
 
   /**
-   * 날짜 범위로 작업 로그 조회
+   * 날짜 범위로 작업계획 조회
    * @param startDate 시작 날짜
    * @param endDate 종료 날짜
-   * @return 작업 로그 목록
+   * @return 작업계획 목록
    */
   public List<WorkLogDTO> getWorkLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
     return workLogMapper.selectWorkLogsByDateRange(startDate, endDate);
   }
 
   /**
-   * 차량 모델로 작업 로그 조회
+   * 차량 모델로 작업계획 조회
    * @param carModel 차량 모델명
-   * @return 작업 로그 목록
+   * @return 작업계획 목록
    */
   public List<WorkLogDTO> getWorkLogsByCarModel(String carModel) {
     return workLogMapper.selectWorkLogsByCarModel(carModel);
   }
 
   /**
-   * 제품 코드로 작업 로그 조회
+   * 제품 코드로 작업계획 조회
    * @param productCode 제품 코드
-   * @return 작업 로그 목록
+   * @return 작업계획 목록
    */
   public List<WorkLogDTO> getWorkLogsByProductCode(String productCode) {
     return workLogMapper.selectWorkLogsByProductCode(productCode);
   }
 
   /**
-   * 상태별 작업 로그 조회
+   * 상태별 작업계획 조회
    * @param status 상태 (completed, incomplete)
-   * @return 작업 로그 목록
+   * @return 작업계획 목록
    */
   public List<WorkLogDTO> getWorkLogsByStatus(String status) {
     return workLogMapper.selectWorkLogsByStatus(status);
